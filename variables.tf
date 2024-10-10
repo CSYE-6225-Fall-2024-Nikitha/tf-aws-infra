@@ -31,3 +31,4 @@ variable "bits_size" {
 variable "destination_cdr_block" {
   description = "Destination CIDR block for the NAT gateway"
   type        = string
+}
