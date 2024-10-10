@@ -1,11 +1,12 @@
 # Call the VPC module
 module "vpc" {
-  source               = "./modules/vpc"
-  vpc_cidr             = var.vpc_cidr
-  public_subnet_count  = var.public_subnet_count
-  private_subnet_count = var.private_subnet_count
-  name                 = var.name
-  bits_size            = var.bits_size
+  source                = "./modules/vpc"
+  vpc_cidr              = var.vpc_cidr
+  public_subnet_count   = var.public_subnet_count
+  private_subnet_count  = var.private_subnet_count
+  name                  = var.name
+  bits_size             = var.bits_size
+  destination_cdr_block = var.destination_cdr_block
 }
 
 output "vpc_id" {

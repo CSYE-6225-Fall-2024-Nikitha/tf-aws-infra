@@ -22,3 +22,8 @@ variable "name" {
   description = "Name for the VPC and associated resources"
   type        = string
 }
+
+variable "destination_cdr_block" {
+  description = "Destination CIDR block for the NAT gateway"
+  type        = string
+}
