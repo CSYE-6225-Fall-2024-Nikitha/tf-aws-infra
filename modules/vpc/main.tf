@@ -1,6 +1,14 @@
 
 data "aws_availability_zones" "available" {}
 
+locals {
+  az_count = length(data.aws_availability_zones.available.names)
+
+  public_subnet_count  = local.az_count >= 3 ? 3 : local.az_count
+  private_subnet_count = local.az_count >= 3 ? 3 : local.az_count
+}
+
+
 resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr
 
@@ -10,7 +18,7 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_subnet" "public_subnet" {
-  count             = var.public_subnet_count
+  count             = local.public_subnet_count
   vpc_id            = aws_vpc.main.id
   cidr_block        = cidrsubnet(var.vpc_cidr, var.bits_size, count.index)
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
@@ -23,7 +31,7 @@ resource "aws_subnet" "public_subnet" {
 }
 
 resource "aws_subnet" "private_subnet" {
-  count             = var.private_subnet_count
+  count             = local.private_subnet_count
   vpc_id            = aws_vpc.main.id
   cidr_block        = cidrsubnet(var.vpc_cidr, var.bits_size, count.index + var.public_subnet_count) # Adjust as needed
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
@@ -52,7 +60,7 @@ resource "aws_route_table" "public" {
 
 # Associate public subnets with the public route table
 resource "aws_route_table_association" "public_subnets" {
-  count          = var.public_subnet_count
+  count          = local.public_subnet_count
   subnet_id      = aws_subnet.public_subnet[count.index].id
   route_table_id = aws_route_table.public.id
 }
@@ -75,15 +83,7 @@ resource "aws_route_table" "private" {
 
 # Associate private subnets with the private route table
 resource "aws_route_table_association" "private_subnets" {
-  count          = var.private_subnet_count
+  count          = local.private_subnet_count
   subnet_id      = aws_subnet.private_subnet[count.index].id
   route_table_id = aws_route_table.private.id
 }
-
-# If there are only 2 availability zones:
-# - Adjust public_subnet_count and private_subnet_count to 2 instead of 3.
-# locals {
-#   az_count = length(data.aws_availability_zones.available.names)
-#   public_subnet_count = az_count
-#   private_subnet_count = az_count
-# }
