@@ -79,3 +79,11 @@ resource "aws_route_table_association" "private_subnets" {
   subnet_id      = aws_subnet.private_subnet[count.index].id
   route_table_id = aws_route_table.private.id
 }
+
+# If there are only 2 availability zones:
+# - Adjust public_subnet_count and private_subnet_count to 2 instead of 3.
+# locals {
+#   az_count = length(data.aws_availability_zones.available.names)
+#   public_subnet_count = az_count
+#   private_subnet_count = az_count
+# }
