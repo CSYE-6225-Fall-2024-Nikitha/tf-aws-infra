@@ -17,3 +17,8 @@ variable "name" {
   description = "Name for the VPC and associated resources"
   type        = string
 }
+
+variable "bits_size" {
+  description = " number of bits (subnet size)"
+  type        = number
+}
