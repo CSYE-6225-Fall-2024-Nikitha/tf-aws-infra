@@ -5,6 +5,7 @@ module "vpc" {
   public_subnet_count  = var.public_subnet_count
   private_subnet_count = var.private_subnet_count
   name                 = var.name
+  bits_size            = var.bits_size
 }
 
 output "vpc_id" {
