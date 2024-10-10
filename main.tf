@@ -7,7 +7,6 @@ module "vpc" {
   name                 = var.name
 }
 
-# Outputs for VPC
 output "vpc_id" {
   value = module.vpc.vpc_id
 }
