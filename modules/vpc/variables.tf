@@ -1,8 +1,3 @@
-variable "region" {
-  description = "AWS region to deploy resources"
-  type        = string
-}
-
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
@@ -19,6 +14,6 @@ variable "private_subnet_count" {
 }
 
 variable "name" {
-  description = "Name tag for resources"
+  description = "Name for the VPC and associated resources"
   type        = string
 }
