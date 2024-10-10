@@ -3,6 +3,11 @@ variable "vpc_cidr" {
   type        = string
 }
 
+variable "bits_size" {
+  description = " number of bits (subnet size)"
+  type        = number
+}
+
 variable "public_subnet_count" {
   description = "Number of public subnets"
   type        = number
