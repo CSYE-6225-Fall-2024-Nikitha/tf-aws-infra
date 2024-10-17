@@ -165,7 +165,7 @@ resource "aws_instance" "app_instance" {
   root_block_device {
     volume_size           = var.volume_size
     volume_type           = var.volume_type
-    delete_on_termination = var.delete_on_termination 
+    delete_on_termination = var.delete_on_termination
   }
 
   tags = {

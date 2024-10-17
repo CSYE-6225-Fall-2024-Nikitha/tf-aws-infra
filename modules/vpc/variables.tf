@@ -44,17 +44,17 @@ variable "key_name" {
   type        = string
 }
 
-variable volume_size {
+variable "volume_size" {
   description = "Size of the root volume in GB"
   type        = number
 }
 
-variable volume_type {
+variable "volume_type" {
   description = "Type of volume (e.g., standard, gp2, etc.)"
   type        = string
 }
 
-variable delete_on_termination {
+variable "delete_on_termination" {
   description = "Whether the volume should be deleted on instance termination"
   type        = bool
 }
