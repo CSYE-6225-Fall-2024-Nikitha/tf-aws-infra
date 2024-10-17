@@ -101,7 +101,7 @@ data "aws_ami" "latest_custom_ami" {
 
 # Application Security Group
 resource "aws_security_group" "application_security_group" {
-  name        = "${var.name}-app-sg"
+  name        = "application_security_group"
   description = "Security group for EC2 instances hosting web applications"
   vpc_id      = aws_vpc.main.id
 
@@ -138,14 +138,6 @@ resource "aws_security_group" "application_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    description = "Allow traffic to the application"
-    from_port   = var.app_port
-    to_port     = var.app_port
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   # Egress rule (allow all outgoing traffic)
   egress {
     from_port   = 0
@@ -155,7 +147,7 @@ resource "aws_security_group" "application_security_group" {
   }
 
   tags = {
-    Name = "${var.name}-app-sg"
+    Name = "application_security_group"
   }
 }
 
@@ -165,7 +157,7 @@ resource "aws_instance" "app_instance" {
   instance_type               = var.instance_type
   availability_zone           = element(data.aws_availability_zones.available.names, 0)
   subnet_id                   = aws_subnet.public_subnet[0].id
-  security_groups             = [aws_security_group.application_security_group.name]
+  security_groups             = [aws_security_group.application_security_group.id]
   key_name                    = var.key_name
   disable_api_termination     = false # Disable accidental termination protection
   associate_public_ip_address = true
