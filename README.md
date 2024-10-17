@@ -5,8 +5,15 @@
   - Public and private subnets across 3 availability zones
   - An Internet Gateway
   - Route tables for public and private subnets
+  - An Application Security Group for web applications
+  - An EC2 instance using a custom AMI
 
 - This Terraform setup allows creating multiple VPCs with their own subnets, gateways, and routing tables without hardcoded values. This is achieved by utilizing variables for customization.
+- Application Security Group Configuration
+  - To allow traffic to the EC2 instance running your web application, the following resources are defined in the Terraform configuration:
+
+  - Application Security Group: This security group allows incoming TCP traffic on ports 22 (SSH), 80 (HTTP), 443 (HTTPS), and a specified port for your application.
+- **EC2 Instance**: The EC2 instance will be launched using the specified custom AMI and will be associated with the application security group.
 
 # Prerequisites
 Before you begin, ensure that the following are installed and set up on your local machine:
@@ -65,6 +72,10 @@ terraform destroy -var-file="dev.tfvars"
 - private_subnet_cidrs: List of CIDR blocks for the private subnets.
 - region: AWS region where the infrastructure will be deployed.
 - availability_zones: List of availability zones to use in the region.
+- app_security_group_id: ID of the application security group.
+- ami_id: Custom AMI ID for the EC2 instance.
+- key_pair: Name of the key pair for SSH access.
+
 
 # Using Multiple Environments
 - You can create multiple environments (e.g., dev, prod) by maintaining separate .tfvars files with different variable values (like dev.tfvars and prod.tfvars).
