@@ -35,11 +35,6 @@ variable "app_port" {
   default     = 8080 # Update this to the port your app runs on
 }
 
-# Variable for AMI ID
-variable "custom_ami_id" {
-  description = "Custom AMI ID"
-  type        = string
-}
 
 # Variable for instance type
 variable "instance_type" {

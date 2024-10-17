@@ -32,3 +32,8 @@ variable "destination_cdr_block" {
   description = "Destination CIDR block for the NAT gateway"
   type        = string
 }
+
+variable "key_name" {
+  description = "The key name for SSH access"
+  type        = string
+}

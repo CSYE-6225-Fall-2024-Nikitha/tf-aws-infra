@@ -7,6 +7,7 @@ module "vpc" {
   name                  = var.name
   bits_size             = var.bits_size
   destination_cdr_block = var.destination_cdr_block
+  key_name              = var.key_name
 }
 
 output "vpc_id" {
