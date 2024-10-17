@@ -1,4 +1,3 @@
-# Call the VPC module
 module "vpc" {
   source                = "./modules/vpc"
   vpc_cidr              = var.vpc_cidr
@@ -8,6 +7,11 @@ module "vpc" {
   bits_size             = var.bits_size
   destination_cdr_block = var.destination_cdr_block
   key_name              = var.key_name
+  volume_size           = var.volume_size
+  volume_type           = var.volume_type
+  delete_on_termination = var.delete_on_termination
+  app_port              = var.app_port
+  instance_type         = var.instance_type
 }
 
 output "vpc_id" {
