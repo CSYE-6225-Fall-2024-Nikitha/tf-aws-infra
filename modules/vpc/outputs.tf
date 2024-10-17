@@ -13,3 +13,7 @@ output "private_subnet_ids" {
 output "internet_gateway_id" {
   value = aws_internet_gateway.main.id
 }
+
+output "ec2_public_dns" {
+  value = aws_instance.app_instance.public_dns
+}
