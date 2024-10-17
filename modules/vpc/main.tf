@@ -89,14 +89,14 @@ resource "aws_route_table_association" "private_subnets" {
 }
 
 data "aws_ami" "latest_custom_ami" {
-  owners = ["self"]  
+  owners = ["self"]
 
   filter {
     name   = "name"
-    values = ["my-custom-ami-*"]  
+    values = ["my-custom-ami-*"]
   }
 
-  most_recent = true  
+  most_recent = true
 }
 
 # Application Security Group
@@ -124,7 +124,7 @@ resource "aws_security_group" "application_security_group" {
 
   ingress {
     description = "Allow WebApp Port"
-    from_port = 8080
+    from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
@@ -167,13 +167,13 @@ resource "aws_instance" "app_instance" {
   subnet_id                   = aws_subnet.public_subnet[0].id
   security_groups             = [aws_security_group.application_security_group.name]
   key_name                    = var.key_name
-  disable_api_termination     = false  # Disable accidental termination protection
+  disable_api_termination     = false # Disable accidental termination protection
   associate_public_ip_address = true
 
   # Root volume configuration
   root_block_device {
-    volume_size = 25
-    volume_type = "gp2"  # General Purpose SSD
+    volume_size           = 25
+    volume_type           = "gp2" # General Purpose SSD
     delete_on_termination = true  # EBS volumes are terminated when EC2 instance is terminated
   }
 

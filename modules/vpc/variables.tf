@@ -32,7 +32,7 @@ variable "destination_cdr_block" {
 variable "app_port" {
   description = "Port on which your application runs"
   type        = number
-  default     = 8080  # Update this to the port your app runs on
+  default     = 8080 # Update this to the port your app runs on
 }
 
 # Variable for AMI ID
