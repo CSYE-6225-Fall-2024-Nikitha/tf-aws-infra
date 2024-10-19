@@ -174,6 +174,7 @@ resource "aws_instance" "app_instance" {
 }
 
 
+# Security group for RDS database instance - PostgreSQL
 resource "aws_security_group" "database_security_group" {
   name        = "database_security_group"
   description = "Security group for database security"
@@ -199,3 +200,35 @@ resource "aws_security_group" "database_security_group" {
   }
 }
 
+# RDS Parameter Group
+resource "aws_db_parameter_group" "rds_parameter_group" {
+  name   = "rds_parameter_group"
+  family = "postgres14"
+}
+
+resource "aws_db_subnet_group" "private_subnet_group" {
+  name       = "private-subnet-group"
+  subnet_ids = aws_subnet.private_subnet[*].id
+
+  tags = {
+    Name = "Private Subnet Group for RDS"
+  }
+}
+
+
+resource "aws_db_instance" "rds_instance" {
+  identifier             = "csye6225"
+  db_name                = "csye6225"
+  engine                 = "postgres"
+  engine_version         = "14"
+  instance_class         = "db.t3.micro"
+  username               = "csye6225"
+  password               = "123456"
+  multi_az               = false
+  db_subnet_group_name   = aws_db_subnet_group.private_subnet_group.name
+  publicly_accessible    = false
+  vpc_security_group_ids = [aws_security_group.database_security_group.id]
+  tags = {
+    Name = "rds_instance"
+  }
+}
