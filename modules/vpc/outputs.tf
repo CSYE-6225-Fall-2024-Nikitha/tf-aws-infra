@@ -17,3 +17,23 @@ output "internet_gateway_id" {
 output "ec2_public_dns" {
   value = aws_instance.app_instance.public_dns
 }
+
+output "db_name" {
+  value = aws_db_instance.rds_instance.db_name
+}
+
+output "db_user" {
+  value = aws_db_instance.rds_instance.username
+}
+
+output "db_password" {
+  value = aws_db_instance.rds_instance.password
+}
+
+output "db_host" {
+  value = aws_db_instance.rds_instance.address
+}
+
+output "db_port" {
+  value = aws_db_instance.rds_instance.port
+}

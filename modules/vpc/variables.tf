@@ -58,3 +58,30 @@ variable "delete_on_termination" {
   description = "Whether the volume should be deleted on instance termination"
   type        = bool
 }
+
+# variable "db_name" {
+#   description = "The name of the database."
+#   type        = string
+# }
+
+# variable "db_user" {
+#   description = "The database username."
+#   type        = string
+# }
+
+# variable "db_password" {
+#   description = "The database password."
+#   type        = string
+#   sensitive   = true
+# }
+
+# variable "db_host" {
+#   description = "The database host."
+#   type        = string
+# }
+
+# variable "db_port" {
+#   description = "The database port."
+#   type        = number
+#   default     = 5432
+# }

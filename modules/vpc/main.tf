@@ -151,6 +151,68 @@ resource "aws_security_group" "application_security_group" {
   }
 }
 
+
+# Security group for RDS database instance - PostgreSQL
+resource "aws_security_group" "database_security_group" {
+  name        = "database_security_group"
+  description = "Security group for database security"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "Allow TCP traffic on PostgreSQL port"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.application_security_group.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "database_security_group"
+  }
+}
+
+# RDS Parameter Group
+resource "aws_db_parameter_group" "rds_parameter_group" {
+  name   = "rds-parameter-group"
+  family = "postgres14"
+}
+
+resource "aws_db_subnet_group" "private_subnet_group" {
+  name       = "private-subnet-group"
+  subnet_ids = aws_subnet.private_subnet[*].id
+
+  tags = {
+    Name = "Private Subnet Group for RDS"
+  }
+}
+
+
+resource "aws_db_instance" "rds_instance" {
+  identifier             = "csye6225"
+  db_name                = "csye6225"
+  engine                 = "postgres"
+  engine_version         = "14"
+  instance_class         = "db.t3.micro"
+  username               = "csye6225"
+  password               = "123456789"
+  multi_az               = false
+  db_subnet_group_name   = aws_db_subnet_group.private_subnet_group.name
+  publicly_accessible    = false
+  parameter_group_name   = aws_db_parameter_group.rds_parameter_group.name
+  vpc_security_group_ids = [aws_security_group.database_security_group.id]
+  allocated_storage      = 20
+  tags = {
+    Name = "rds_instance"
+  }
+}
+
 # EC2 Instance
 resource "aws_instance" "app_instance" {
   ami                         = data.aws_ami.latest_custom_ami.id
@@ -161,6 +223,14 @@ resource "aws_instance" "app_instance" {
   key_name                    = var.key_name
   disable_api_termination     = false
   associate_public_ip_address = true
+  user_data = templatefile("${path.module}/userData.tpl", {
+    DB_NAME     = aws_db_instance.rds_instance.db_name
+    DB_USER     = aws_db_instance.rds_instance.username
+    DB_PASSWORD = aws_db_instance.rds_instance.password
+    DB_HOST     = aws_db_instance.rds_instance.address
+    DB_PORT     = 5432
+    DB_DIALECT  = "postgres"
+  })
 
   root_block_device {
     volume_size           = var.volume_size
