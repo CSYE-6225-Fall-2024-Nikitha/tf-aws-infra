@@ -151,28 +151,6 @@ resource "aws_security_group" "application_security_group" {
   }
 }
 
-# EC2 Instance
-resource "aws_instance" "app_instance" {
-  ami                         = data.aws_ami.latest_custom_ami.id
-  instance_type               = var.instance_type
-  availability_zone           = element(data.aws_availability_zones.available.names, 0)
-  subnet_id                   = aws_subnet.public_subnet[0].id
-  security_groups             = [aws_security_group.application_security_group.id]
-  key_name                    = var.key_name
-  disable_api_termination     = false
-  associate_public_ip_address = true
-
-  root_block_device {
-    volume_size           = var.volume_size
-    volume_type           = var.volume_type
-    delete_on_termination = var.delete_on_termination
-  }
-
-  tags = {
-    Name = "${var.name}-app-instance"
-  }
-}
-
 
 # Security group for RDS database instance - PostgreSQL
 resource "aws_security_group" "database_security_group" {
@@ -202,7 +180,7 @@ resource "aws_security_group" "database_security_group" {
 
 # RDS Parameter Group
 resource "aws_db_parameter_group" "rds_parameter_group" {
-  name   = "rds_parameter_group"
+  name   = "rds-parameter-group"
   family = "postgres14"
 }
 
@@ -223,12 +201,44 @@ resource "aws_db_instance" "rds_instance" {
   engine_version         = "14"
   instance_class         = "db.t3.micro"
   username               = "csye6225"
-  password               = "123456"
+  password               = "123456789"
   multi_az               = false
   db_subnet_group_name   = aws_db_subnet_group.private_subnet_group.name
   publicly_accessible    = false
+  parameter_group_name   = aws_db_parameter_group.rds_parameter_group.name
   vpc_security_group_ids = [aws_security_group.database_security_group.id]
+  allocated_storage      = 20
   tags = {
     Name = "rds_instance"
+  }
+}
+
+# EC2 Instance
+resource "aws_instance" "app_instance" {
+  ami                         = data.aws_ami.latest_custom_ami.id
+  instance_type               = var.instance_type
+  availability_zone           = element(data.aws_availability_zones.available.names, 0)
+  subnet_id                   = aws_subnet.public_subnet[0].id
+  security_groups             = [aws_security_group.application_security_group.id]
+  key_name                    = var.key_name
+  disable_api_termination     = false
+  associate_public_ip_address = true
+  user_data = templatefile("${path.module}/userData.tpl", {
+    DB_NAME     = aws_db_instance.rds_instance.db_name
+    DB_USER     = aws_db_instance.rds_instance.username
+    DB_PASSWORD = aws_db_instance.rds_instance.password
+    DB_HOST     = aws_db_instance.rds_instance.address
+    DB_PORT     = 5432
+    DB_DIALECT  = "postgres"
+  })
+
+  root_block_device {
+    volume_size           = var.volume_size
+    volume_type           = var.volume_type
+    delete_on_termination = var.delete_on_termination
+  }
+
+  tags = {
+    Name = "${var.name}-app-instance"
   }
 }
