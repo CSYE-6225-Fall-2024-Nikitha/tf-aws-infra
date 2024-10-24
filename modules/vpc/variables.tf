@@ -59,29 +59,69 @@ variable "delete_on_termination" {
   type        = bool
 }
 
-# variable "db_name" {
-#   description = "The name of the database."
-#   type        = string
-# }
+variable "dialect" {
+  description = "The dialect"
+  type        = string
+  default     = "postgres"
+}
 
-# variable "db_user" {
-#   description = "The database username."
-#   type        = string
-# }
+variable "db_port" {
+  description = "Port on which your Database runs"
+  type        = number
+}
 
-# variable "db_password" {
-#   description = "The database password."
-#   type        = string
-#   sensitive   = true
-# }
+variable "db_family" {
+  description = "Database family"
+  type        = string
+}
 
-# variable "db_host" {
-#   description = "The database host."
-#   type        = string
-# }
+variable "identifier" {
+  description = "Identifier for the database instance"
+  type        = string
+}
 
-# variable "db_port" {
-#   description = "The database port."
-#   type        = number
-#   default     = 5432
-# }
+variable "db_name" {
+  description = "Name of the database"
+  type        = string
+}
+
+variable "engine" {
+  description = "Database engine type"
+  type        = string
+}
+
+variable "engine_version" {
+  description = "Version of the database engine"
+  type        = string
+}
+
+variable "instance_class" {
+  description = "Instance class for the database"
+  type        = string
+}
+
+variable "username" {
+  description = "Username for the database"
+  type        = string
+}
+
+variable "password" {
+  description = "Password for the database"
+  type        = string
+  sensitive   = true
+}
+
+variable "multi_az" {
+  description = "Enable Multi-AZ deployment"
+  type        = bool
+}
+
+variable "skip_final_snapshot" {
+  description = "Skip the final snapshot before deletion"
+  type        = bool
+}
+
+variable "allocated_storage" {
+  description = "The allocated storage size (in GB) for the database"
+  type        = number
+}

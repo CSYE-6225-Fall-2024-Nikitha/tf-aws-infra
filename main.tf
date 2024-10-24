@@ -11,7 +11,21 @@ module "vpc" {
   volume_type           = var.volume_type
   delete_on_termination = var.delete_on_termination
   app_port              = var.app_port
+  db_port               = var.db_port
+  db_family             = var.db_family
   instance_type         = var.instance_type
+  dialect               = var.dialect
+  db_name               = var.db_name
+  engine                = var.engine
+  engine_version        = var.engine_version
+  instance_class        = var.instance_class
+  allocated_storage     = var.allocated_storage
+  username              = var.username
+  password              = var.password
+  multi_az              = var.multi_az
+  identifier            = var.identifier
+  skip_final_snapshot   = var.skip_final_snapshot
+
 }
 
 output "vpc_id" {
