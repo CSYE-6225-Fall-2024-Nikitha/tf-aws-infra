@@ -21,6 +21,10 @@ DB_PORT=${DB_PORT}
 DB_DIALECT=${DB_DIALECT}
 EOF
 
+sudo chown -R csye6225:csye6225 /home/ubuntu/
+sudo chmod -R 755 /home/ubuntu/
+sudo chown -R csye6225:csye6225 /home/ubuntu/webapp/.env
+sudo chmod -R 755 /home/ubuntu/webapp/.env
 touch /opt/setDataBase.sh
 
 if [ -f "$ENV_FILE" ]; then
