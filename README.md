@@ -7,6 +7,7 @@
   - Route tables for public and private subnets
   - An Application Security Group for web applications
   - An EC2 instance using a custom AMI
+  - An RDS instance for hosting postgresql databases
 
 - This Terraform setup allows creating multiple VPCs with their own subnets, gateways, and routing tables without hardcoded values. This is achieved by utilizing variables for customization.
 - Application Security Group Configuration
