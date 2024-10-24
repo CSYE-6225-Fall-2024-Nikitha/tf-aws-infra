@@ -160,8 +160,8 @@ resource "aws_security_group" "database_security_group" {
 
   ingress {
     description     = "Allow TCP traffic on PostgreSQL port"
-    from_port       = 5432
-    to_port         = 5432
+    from_port       = var.db_port
+    to_port         = var.db_port
     protocol        = "tcp"
     security_groups = [aws_security_group.application_security_group.id]
   }
@@ -181,7 +181,7 @@ resource "aws_security_group" "database_security_group" {
 # RDS Parameter Group
 resource "aws_db_parameter_group" "rds_parameter_group" {
   name   = "rds-parameter-group"
-  family = "postgres14"
+  family = var.db_family
 }
 
 resource "aws_db_subnet_group" "private_subnet_group" {
@@ -195,19 +195,20 @@ resource "aws_db_subnet_group" "private_subnet_group" {
 
 
 resource "aws_db_instance" "rds_instance" {
-  identifier             = "csye6225"
-  db_name                = "csye6225"
-  engine                 = "postgres"
-  engine_version         = "14"
-  instance_class         = "db.t3.micro"
-  username               = "csye6225"
-  password               = "123456789"
-  multi_az               = false
+  identifier             = var.identifier
+  db_name                = var.db_name
+  engine                 = var.engine
+  engine_version         = var.engine_version
+  instance_class         = var.instance_class
+  username               = var.username
+  password               = var.password
+  multi_az               = var.multi_az
   db_subnet_group_name   = aws_db_subnet_group.private_subnet_group.name
   publicly_accessible    = false
   parameter_group_name   = aws_db_parameter_group.rds_parameter_group.name
   vpc_security_group_ids = [aws_security_group.database_security_group.id]
-  allocated_storage      = 20
+  allocated_storage      = var.allocated_storage
+  skip_final_snapshot    = var.skip_final_snapshot
   tags = {
     Name = "rds_instance"
   }
@@ -228,8 +229,8 @@ resource "aws_instance" "app_instance" {
     DB_USER     = aws_db_instance.rds_instance.username
     DB_PASSWORD = aws_db_instance.rds_instance.password
     DB_HOST     = aws_db_instance.rds_instance.address
-    DB_PORT     = 5432
-    DB_DIALECT  = "postgres"
+    DB_PORT     = var.db_port
+    DB_DIALECT  = var.dialect
   })
 
   root_block_device {
