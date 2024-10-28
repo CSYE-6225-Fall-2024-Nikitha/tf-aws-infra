@@ -89,7 +89,7 @@ resource "aws_route_table_association" "private_subnets" {
 }
 
 data "aws_ami" "latest_custom_ami" {
-  # owners = ["self"]
+  owners = ["self"]
 
   filter {
     name   = "name"
@@ -243,3 +243,43 @@ resource "aws_instance" "app_instance" {
     Name = "${var.name}-app-instance"
   }
 }
+
+// S3 bucket
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = "bucket-${uuid()}"  
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "my_bucket_encryption" {
+  bucket = aws_s3_bucket.my_bucket.id  
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "my_bucket_lifecycle" {
+  bucket = aws_s3_bucket.my_bucket.id  
+
+  rule {
+    id     = "TransitionToIA"
+    status = "Enabled"
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+  }
+}
+
+resource "aws_route53_record" "app_record" {
+  zone_id = "Z10283581G2SJ4BJRN1IA" 
+  name    = "dev.nikitha-kambhampati.me"
+  type    = "A"
+
+  ttl = 300 
+  records = [aws_instance.app_instance.public_ip] 
+}
+
