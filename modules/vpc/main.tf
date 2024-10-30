@@ -241,12 +241,12 @@ resource "aws_instance" "app_instance" {
 
 # S3 bucket
 resource "aws_s3_bucket" "csye6225_bucket" {
-  bucket = "bucket-${uuid()}"  
+  bucket        = "bucket-${uuid()}"
   force_destroy = true
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "my_bucket_encryption" {
-  bucket = aws_s3_bucket.csye6225_bucket.id  
+  bucket = aws_s3_bucket.csye6225_bucket.id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -256,7 +256,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "my_bucket_encrypt
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "my_bucket_lifecycle" {
-  bucket = aws_s3_bucket.csye6225_bucket.id  
+  bucket = aws_s3_bucket.csye6225_bucket.id
 
   rule {
     id     = "TransitionToIA"
@@ -274,13 +274,17 @@ data "aws_route53_zone" "selected" {
 }
 
 
+data "aws_route53_zone" "main" {
+  name = "nikitha-kambhampati.me"
+}
+
 resource "aws_route53_record" "app_record" {
-  zone_id = "Z10283581G2SJ4BJRN1IA"
+  zone_id = data.aws_route53_zone.main.zone_id
   name    = "${var.subdomain}.nikitha-kambhampati.me"
   type    = "A"
 
-  ttl = 300 
-  records = [aws_instance.app_instance.public_ip] 
+  ttl     = 300
+  records = [aws_instance.app_instance.public_ip]
 }
 
 
@@ -295,11 +299,11 @@ resource "aws_iam_role" "cloudwatch_agent_role" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect    = "Allow",
+        Effect = "Allow",
         Principal = {
           Service = "ec2.amazonaws.com"
         },
-        Action    = "sts:AssumeRole" 
+        Action = "sts:AssumeRole"
       }
     ]
   })
