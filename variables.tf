@@ -129,3 +129,8 @@ variable "allocated_storage" {
   description = "The allocated storage size (in GB) for the database"
   type        = number
 }
+
+variable "subdomain" {
+  description = "The subdomain to use for the Route 53 record"
+  type        = string
+}

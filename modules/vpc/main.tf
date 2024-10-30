@@ -88,16 +88,16 @@ resource "aws_route_table_association" "private_subnets" {
   route_table_id = aws_route_table.private.id
 }
 
-data "aws_ami" "latest_custom_ami" {
-  # owners = ["self"]
+# data "aws_ami" "latest_custom_ami" {
+#   owners = ["self"]
 
-  filter {
-    name   = "name"
-    values = ["my-custom-ami-*"]
-  }
+#   filter {
+#     name   = "name"
+#     values = ["my-custom-ami-*"]
+#   }
 
-  most_recent = true
-}
+#   most_recent = true
+# }
 
 # Application Security Group
 resource "aws_security_group" "application_security_group" {
@@ -166,12 +166,6 @@ resource "aws_security_group" "database_security_group" {
     security_groups = [aws_security_group.application_security_group.id]
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   tags = {
     Name = "database_security_group"
@@ -216,7 +210,7 @@ resource "aws_db_instance" "rds_instance" {
 
 # EC2 Instance
 resource "aws_instance" "app_instance" {
-  ami                         = data.aws_ami.latest_custom_ami.id
+  ami                         = "ami-038c10b41162a0e48"
   instance_type               = var.instance_type
   availability_zone           = element(data.aws_availability_zones.available.names, 0)
   subnet_id                   = aws_subnet.public_subnet[0].id
@@ -224,6 +218,7 @@ resource "aws_instance" "app_instance" {
   key_name                    = var.key_name
   disable_api_termination     = false
   associate_public_ip_address = true
+  iam_instance_profile        = aws_iam_instance_profile.cloudwatch_instance_profile.name
   user_data = templatefile("${path.module}/userData.tpl", {
     DB_NAME     = aws_db_instance.rds_instance.db_name
     DB_USER     = aws_db_instance.rds_instance.username
@@ -243,3 +238,110 @@ resource "aws_instance" "app_instance" {
     Name = "${var.name}-app-instance"
   }
 }
+
+# S3 bucket
+resource "aws_s3_bucket" "csye6225_bucket" {
+  bucket        = "bucket-${uuid()}"
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "my_bucket_encryption" {
+  bucket = aws_s3_bucket.csye6225_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "my_bucket_lifecycle" {
+  bucket = aws_s3_bucket.csye6225_bucket.id
+
+  rule {
+    id     = "TransitionToIA"
+    status = "Enabled"
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+  }
+}
+
+data "aws_route53_zone" "selected" {
+  name = "${var.subdomain}.nikitha-kambhampati.me"
+}
+
+
+data "aws_route53_zone" "main" {
+  name = "nikitha-kambhampati.me"
+}
+
+resource "aws_route53_record" "app_record" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "${var.subdomain}.nikitha-kambhampati.me"
+  type    = "A"
+
+  ttl     = 300
+  records = [aws_instance.app_instance.public_ip]
+}
+
+
+#IAM Role for Cloud watch agent
+# like Role = Permission
+#EC2 has permission to send logs to cloud watch
+# With the help of this role, logs can be sent to Cloudwatch from EC2
+resource "aws_iam_role" "cloudwatch_agent_role" {
+  name = "ec2_cloudwatch_agent_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+
+#IAM Policy for Cloud watch agent
+# That is this EC2 can write logs and metrics to the Cloudwatch
+resource "aws_iam_policy" "cloudwatch_agent_policy" {
+  name        = "cloudwatch_agent_policy"
+  description = "Policy for CloudWatch agent to write logs and metrics"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "cloudwatch:PutMetricData",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Effect   = "Allow",
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Attach this policy to the IAM role
+resource "aws_iam_role_policy_attachment" "attach_cloudwatch_policy" {
+  role       = aws_iam_role.cloudwatch_agent_role.name
+  policy_arn = aws_iam_policy.cloudwatch_agent_policy.arn
+}
+
+# EC2 Instance Profile
+resource "aws_iam_instance_profile" "cloudwatch_instance_profile" {
+  name = "cloudwatch_instance_profile"
+  role = aws_iam_role.cloudwatch_agent_role.name
+}
+
