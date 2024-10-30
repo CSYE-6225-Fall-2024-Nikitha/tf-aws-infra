@@ -25,7 +25,25 @@ sudo chown -R csye6225:csye6225 /home/ubuntu/
 sudo chmod -R 755 /home/ubuntu/
 sudo chown -R csye6225:csye6225 /home/ubuntu/webapp/.env
 sudo chmod -R 755 /home/ubuntu/webapp/.env
+
+
+
+
+CLOUDWATCH_CONFIG_PATH="/opt/aws/amazon-cloudwatch-agent/etc/cloudwatch-config.json"
+
+if [ -f "$CLOUDWATCH_CONFIG_PATH" ]; then
+    sudo systemctl enable amazon-cloudwatch-agent
+
+    sudo systemctl restart amazon-cloudwatch-agent
+
+    echo "CloudWatch agent configured and restarted successfully."
+else
+    echo "CloudWatch configuration file not found at $CLOUDWATCH_CONFIG_PATH."
+    exit 1
+fi
+
 touch /opt/setDataBase.sh
+
 
 if [ -f "$ENV_FILE" ]; then
   echo ".env file created successfully:"

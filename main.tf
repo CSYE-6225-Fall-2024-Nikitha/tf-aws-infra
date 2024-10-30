@@ -25,6 +25,7 @@ module "vpc" {
   multi_az              = var.multi_az
   identifier            = var.identifier
   skip_final_snapshot   = var.skip_final_snapshot
+  subdomain             = var.subdomain
 
 }
 
