@@ -218,7 +218,7 @@ resource "aws_instance" "app_instance" {
   key_name                    = var.key_name
   disable_api_termination     = false
   associate_public_ip_address = true
-  iam_instance_profile        = aws_iam_instance_profile.cloudwatch_instance_profile.name
+  iam_instance_profile        = aws_iam_instance_profile.combined_instance_profile.name
   user_data = templatefile("${path.module}/userData.tpl", {
     DB_NAME     = aws_db_instance.rds_instance.db_name
     DB_USER     = aws_db_instance.rds_instance.username
@@ -226,6 +226,7 @@ resource "aws_instance" "app_instance" {
     DB_HOST     = aws_db_instance.rds_instance.address
     DB_PORT     = var.db_port
     DB_DIALECT  = var.dialect
+    S3_BUCKET_ID= aws_s3_bucket.csye6225_bucket.bucket
   })
 
   root_block_device {
@@ -343,5 +344,83 @@ resource "aws_iam_role_policy_attachment" "attach_cloudwatch_policy" {
 resource "aws_iam_instance_profile" "cloudwatch_instance_profile" {
   name = "cloudwatch_instance_profile"
   role = aws_iam_role.cloudwatch_agent_role.name
+}
+
+# IAM Role for S3 Access
+resource "aws_iam_role" "s3_access_role" {
+  name = "ec2_s3_access_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# IAM Policy for S3 Access
+resource "aws_iam_policy" "s3_access_policy" {
+  name        = "s3_access_policy"
+  description = "Policy for EC2 instances to access S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ],
+        Resource = [
+          "${aws_s3_bucket.csye6225_bucket.arn}/*",  
+          aws_s3_bucket.csye6225_bucket.arn            
+        ]
+      }
+    ]
+  })
+}
+
+# Attach the S3 policy to the IAM role
+resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
+  role       = aws_iam_role.s3_access_role.name
+  policy_arn = aws_iam_policy.s3_access_policy.arn
+}
+
+# Attach the S3 access role to the EC2 Instance
+resource "aws_iam_instance_profile" "s3_instance_profile" {
+  name = "s3_instance_profile"
+  role = aws_iam_role.s3_access_role.name
+}
+
+# Step 1: Create a new IAM role
+resource "aws_iam_role" "combined_role" {
+  name               = "combined_role"
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+}
+
+# Step 2: Attach existing policies to the new role
+resource "aws_iam_role_policy_attachment" "s3_access" {
+  policy_arn = aws_iam_policy.s3_access_policy.arn
+  role       = aws_iam_role.combined_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "cloudwatch_access" {
+  policy_arn = aws_iam_policy.cloudwatch_access_policy.arn
+  role       = aws_iam_role.combined_role.name
+}
+
+# Step 3: Create a new instance profile for the combined role
+resource "aws_iam_instance_profile" "combined_instance_profile" {
+  name = "combined_instance_profile"
+  role = aws_iam_role.combined_role.name
 }
 
