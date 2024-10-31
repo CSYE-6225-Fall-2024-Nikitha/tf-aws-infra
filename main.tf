@@ -26,7 +26,7 @@ module "vpc" {
   identifier            = var.identifier
   skip_final_snapshot   = var.skip_final_snapshot
   subdomain             = var.subdomain
-
+  ami                   = var.ami
 }
 
 output "vpc_id" {

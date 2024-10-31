@@ -131,3 +131,8 @@ variable "subdomain" {
   type        = string
   default     = "dev" # You can set a default value like 'dev' or 'demo'
 }
+
+variable "ami" {
+  description = "The ami id"
+  type        = string
+}

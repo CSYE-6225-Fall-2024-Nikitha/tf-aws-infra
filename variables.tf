@@ -134,3 +134,8 @@ variable "subdomain" {
   description = "The subdomain to use for the Route 53 record"
   type        = string
 }
+
+variable "ami" {
+  description = "The ami id"
+  type        = string
+}

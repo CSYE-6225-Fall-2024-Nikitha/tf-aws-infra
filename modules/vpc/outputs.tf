@@ -37,3 +37,8 @@ output "db_host" {
 output "db_port" {
   value = aws_db_instance.rds_instance.port
 }
+
+variable "ami" {
+  description = "The ami id"
+  type        = string
+}
