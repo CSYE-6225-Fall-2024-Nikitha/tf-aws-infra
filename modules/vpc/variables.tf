@@ -3,6 +3,11 @@ variable "vpc_cidr" {
   type        = string
 }
 
+variable "region" {
+  description = "AWS region to deploy resources"
+  type        = string
+}
+
 variable "bits_size" {
   description = " number of bits (subnet size)"
   type        = number
