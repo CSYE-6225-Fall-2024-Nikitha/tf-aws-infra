@@ -220,13 +220,13 @@ resource "aws_instance" "app_instance" {
   associate_public_ip_address = true
   iam_instance_profile        = aws_iam_instance_profile.combined_instance_profile.name
   user_data = templatefile("${path.module}/userData.tpl", {
-    DB_NAME     = aws_db_instance.rds_instance.db_name
-    DB_USER     = aws_db_instance.rds_instance.username
-    DB_PASSWORD = aws_db_instance.rds_instance.password
-    DB_HOST     = aws_db_instance.rds_instance.address
-    DB_PORT     = var.db_port
-    DB_DIALECT  = var.dialect
-    S3_BUCKET_ID= aws_s3_bucket.csye6225_bucket.bucket
+    DB_NAME      = aws_db_instance.rds_instance.db_name
+    DB_USER      = aws_db_instance.rds_instance.username
+    DB_PASSWORD  = aws_db_instance.rds_instance.password
+    DB_HOST      = aws_db_instance.rds_instance.address
+    DB_PORT      = var.db_port
+    DB_DIALECT   = var.dialect
+    S3_BUCKET_ID = aws_s3_bucket.csye6225_bucket.bucket
   })
 
   root_block_device {
@@ -381,8 +381,8 @@ resource "aws_iam_policy" "s3_access_policy" {
           "s3:ListBucket"
         ],
         Resource = [
-          "${aws_s3_bucket.csye6225_bucket.arn}/*",  
-          aws_s3_bucket.csye6225_bucket.arn            
+          "${aws_s3_bucket.csye6225_bucket.arn}/*",
+          aws_s3_bucket.csye6225_bucket.arn
         ]
       }
     ]
