@@ -331,11 +331,11 @@ resource "aws_iam_policy" "combined_policy" {
           "${aws_s3_bucket.csye6225_bucket.arn}/*", # Allows actions on all objects in your specified S3 bucket
           aws_s3_bucket.csye6225_bucket.arn,
           "*",
-          "arn:aws:cloudwatch:${var.region}::dashboard/*",             
+          "arn:aws:cloudwatch:${var.region}::dashboard/*",
 
-          "arn:aws:cloudwatch:${var.region}::metric/*",                
+          "arn:aws:cloudwatch:${var.region}::metric/*",
 
-          "arn:aws:logs:${var.region}::log-group:*",                    
+          "arn:aws:logs:${var.region}::log-group:*",
           "arn:aws:logs:${var.region}::log-group:*:log-stream:*"
 
         ]
