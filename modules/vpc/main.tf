@@ -210,7 +210,7 @@ resource "aws_db_instance" "rds_instance" {
 
 # EC2 Instance
 resource "aws_instance" "app_instance" {
-  ami                         = "ami-038c10b41162a0e48"
+  ami                         = var.ami
   instance_type               = var.instance_type
   availability_zone           = element(data.aws_availability_zones.available.names, 0)
   subnet_id                   = aws_subnet.public_subnet[0].id
