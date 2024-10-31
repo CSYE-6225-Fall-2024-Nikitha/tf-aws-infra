@@ -275,12 +275,8 @@ data "aws_route53_zone" "selected" {
 }
 
 
-data "aws_route53_zone" "main" {
-  name = "nikitha-kambhampati.me"
-}
-
 resource "aws_route53_record" "app_record" {
-  zone_id = data.aws_route53_zone.main.zone_id
+  zone_id = data.aws_route53_zone.selected.zone_id
   name    = "${var.subdomain}.nikitha-kambhampati.me"
   type    = "A"
 
@@ -330,10 +326,7 @@ resource "aws_iam_policy" "combined_policy" {
           "s3:DeleteObject",
           "s3:ListBucket"
         ],
-        Resource = [
-          "${aws_s3_bucket.csye6225_bucket.arn}/*",
-          aws_s3_bucket.csye6225_bucket.arn
-        ]
+        Resource = "*"
       }
     ]
   })
