@@ -289,12 +289,10 @@ resource "aws_route53_record" "app_record" {
 }
 
 
-#IAM Role for Cloud watch agent
-# like Role = Permission
-#EC2 has permission to send logs to cloud watch
-# With the help of this role, logs can be sent to Cloudwatch from EC2
-resource "aws_iam_role" "cloudwatch_agent_role" {
-  name = "ec2_cloudwatch_agent_role"
+
+# IAM Role for combined access
+resource "aws_iam_role" "combined_role" {
+  name = "ec2_combined_role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -311,70 +309,22 @@ resource "aws_iam_role" "cloudwatch_agent_role" {
 }
 
 
-#IAM Policy for Cloud watch agent
+#IAM Policy for Cloud watch agent and s3
 # That is this EC2 can write logs and metrics to the Cloudwatch
-resource "aws_iam_policy" "cloudwatch_agent_policy" {
-  name        = "cloudwatch_agent_policy"
-  description = "Policy for CloudWatch agent to write logs and metrics"
+resource "aws_iam_policy" "combined_policy" {
+  name        = "combined_cloudwatch_s3_policy"
+  description = "Combined policy for CloudWatch agent and S3 access"
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
+        Effect = "Allow",
         Action = [
           "cloudwatch:PutMetricData",
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ],
-        Effect   = "Allow",
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-# Attach this policy to the IAM role
-resource "aws_iam_role_policy_attachment" "attach_cloudwatch_policy" {
-  role       = aws_iam_role.cloudwatch_agent_role.name
-  policy_arn = aws_iam_policy.cloudwatch_agent_policy.arn
-}
-
-# EC2 Instance Profile
-resource "aws_iam_instance_profile" "cloudwatch_instance_profile" {
-  name = "cloudwatch_instance_profile"
-  role = aws_iam_role.cloudwatch_agent_role.name
-}
-
-# IAM Role for S3 Access
-resource "aws_iam_role" "s3_access_role" {
-  name = "ec2_s3_access_role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        },
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-}
-
-# IAM Policy for S3 Access
-resource "aws_iam_policy" "s3_access_policy" {
-  name        = "s3_access_policy"
-  description = "Policy for EC2 instances to access S3 bucket"
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
+          "logs:PutLogEvents",
           "s3:PutObject",
           "s3:GetObject",
           "s3:DeleteObject",
@@ -389,38 +339,14 @@ resource "aws_iam_policy" "s3_access_policy" {
   })
 }
 
-# Attach the S3 policy to the IAM role
-resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
-  role       = aws_iam_role.s3_access_role.name
-  policy_arn = aws_iam_policy.s3_access_policy.arn
-}
-
-# Attach the S3 access role to the EC2 Instance
-resource "aws_iam_instance_profile" "s3_instance_profile" {
-  name = "s3_instance_profile"
-  role = aws_iam_role.s3_access_role.name
-}
-
-# Step 1: Create a new IAM role
-resource "aws_iam_role" "combined_role" {
-  name               = "combined_role"
-  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
-}
-
-# Step 2: Attach existing policies to the new role
-resource "aws_iam_role_policy_attachment" "s3_access" {
-  policy_arn = aws_iam_policy.s3_access_policy.arn
+# Attach this policy to the IAM role# Attach the combined policy to the IAM role
+resource "aws_iam_role_policy_attachment" "attach_combined_policy" {
   role       = aws_iam_role.combined_role.name
+  policy_arn = aws_iam_policy.combined_policy.arn
 }
 
-resource "aws_iam_role_policy_attachment" "cloudwatch_access" {
-  policy_arn = aws_iam_policy.cloudwatch_access_policy.arn
-  role       = aws_iam_role.combined_role.name
-}
-
-# Step 3: Create a new instance profile for the combined role
+# EC2 Instance Profile for the combined role
 resource "aws_iam_instance_profile" "combined_instance_profile" {
   name = "combined_instance_profile"
   role = aws_iam_role.combined_role.name
 }
-
