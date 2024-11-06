@@ -388,11 +388,11 @@ resource "aws_security_group" "load_balancer_security_group" {
 
 // Auto scaling and Launch Template
 resource "aws_launch_template" "web_app_launch_template" {
-  name          = "csye6225_asg"
-  image_id      = var.ami
-  instance_type = var.instance_type
-  key_name      = var.key_name
-  disable_api_termination     = false
+  name                    = "csye6225_asg"
+  image_id                = var.ami
+  instance_type           = var.instance_type
+  key_name                = var.key_name
+  disable_api_termination = false
   network_interfaces {
     associate_public_ip_address = true
     subnet_id                   = aws_subnet.public_subnet[0].id
@@ -406,16 +406,16 @@ resource "aws_launch_template" "web_app_launch_template" {
     name = aws_iam_instance_profile.combined_instance_profile.name
   }
 
- user_data = base64encode(templatefile("${path.module}/userData.tpl", {
-  DB_NAME      = aws_db_instance.rds_instance.db_name
-  DB_USER      = aws_db_instance.rds_instance.username
-  DB_PASSWORD  = aws_db_instance.rds_instance.password
-  DB_HOST      = aws_db_instance.rds_instance.address
-  DB_PORT      = var.db_port
-  DB_DIALECT   = var.dialect
-  S3_BUCKET_ID = aws_s3_bucket.csye6225_bucket.bucket
-  AWS_REGION   = var.region
-}))
+  user_data = base64encode(templatefile("${path.module}/userData.tpl", {
+    DB_NAME      = aws_db_instance.rds_instance.db_name
+    DB_USER      = aws_db_instance.rds_instance.username
+    DB_PASSWORD  = aws_db_instance.rds_instance.password
+    DB_HOST      = aws_db_instance.rds_instance.address
+    DB_PORT      = var.db_port
+    DB_DIALECT   = var.dialect
+    S3_BUCKET_ID = aws_s3_bucket.csye6225_bucket.bucket
+    AWS_REGION   = var.region
+  }))
 
   tag_specifications {
     resource_type = "instance"
@@ -440,14 +440,14 @@ resource "aws_launch_template" "web_app_launch_template" {
 resource "aws_autoscaling_group" "webapp_autoscaling_group" {
   launch_template {
     id      = aws_launch_template.web_app_launch_template.id
-    version = "$Latest" 
+    version = "$Latest"
   }
 
-  min_size           = 1
-  max_size           = 3
-  desired_capacity   = 1
-  vpc_zone_identifier = [aws_subnet.public_subnet[0].id] 
-  default_cooldown           = 60
+  min_size            = 1
+  max_size            = 3
+  desired_capacity    = 1
+  vpc_zone_identifier = [aws_subnet.public_subnet[0].id]
+  default_cooldown    = 60
 
   tag {
     key                 = "AutoScalingGroup"
@@ -459,7 +459,7 @@ resource "aws_autoscaling_group" "webapp_autoscaling_group" {
 #Auto scaling policies
 resource "aws_autoscaling_policy" "scale_up" {
   name                   = "scale_up"
-  scaling_adjustment      = 1
+  scaling_adjustment     = 1
   adjustment_type        = "ChangeInCapacity"
   cooldown               = 60
   autoscaling_group_name = aws_autoscaling_group.webapp_autoscaling_group.name
@@ -469,7 +469,7 @@ resource "aws_autoscaling_policy" "scale_up" {
 
 resource "aws_autoscaling_policy" "scale_down" {
   name                   = "scale_down"
-  scaling_adjustment      = -1
+  scaling_adjustment     = -1
   adjustment_type        = "ChangeInCapacity"
   cooldown               = 60
   autoscaling_group_name = aws_autoscaling_group.webapp_autoscaling_group.name
@@ -479,32 +479,32 @@ resource "aws_autoscaling_policy" "scale_down" {
 
 # Create CloudWatch alarms for the scaling policies
 resource "aws_cloudwatch_metric_alarm" "cpu_high" {
-  alarm_name                = "high_cpu_alarm"
-  comparison_operator       = "GreaterThanThreshold"
-  evaluation_periods        = "1"
-  metric_name              = "CPUUtilization"
-  namespace                = "AWS/EC2"
-  period                   = "60"
-  statistic                = "Average"
-  threshold                = 5
-  alarm_description        = "Alarm when CPU exceeds 5%"
+  alarm_name          = "high_cpu_alarm"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "60"
+  statistic           = "Average"
+  threshold           = 5
+  alarm_description   = "Alarm when CPU exceeds 5%"
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.webapp_autoscaling_group.name
   }
-  
+
   alarm_actions = [aws_autoscaling_policy.scale_up.arn]
 }
 
 resource "aws_cloudwatch_metric_alarm" "cpu_low" {
-  alarm_name                = "low_cpu_alarm"
-  comparison_operator       = "LessThanThreshold"
-  evaluation_periods        = "1"
-  metric_name              = "CPUUtilization"
-  namespace                = "AWS/EC2"
-  period                   = "60"
-  statistic                = "Average"
-  threshold                = 3
-  alarm_description        = "Alarm when CPU is below 3%"
+  alarm_name          = "low_cpu_alarm"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "60"
+  statistic           = "Average"
+  threshold           = 3
+  alarm_description   = "Alarm when CPU is below 3%"
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.webapp_autoscaling_group.name
   }
@@ -514,11 +514,11 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low" {
 
 # create app load balancer
 resource "aws_lb" "web_app_lb" {
-  name               = "web-app-lb"
-  internal           = false 
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.load_balancer_security_group.id]
-  subnets            = aws_subnet.public_subnet[*].id
+  name                       = "web-app-lb"
+  internal                   = false
+  load_balancer_type         = "application"
+  security_groups            = [aws_security_group.load_balancer_security_group.id]
+  subnets                    = aws_subnet.public_subnet[*].id
   enable_deletion_protection = false
   tags = {
     Name = "web_app_load_balancer"
@@ -534,7 +534,7 @@ resource "aws_lb_target_group" "web_app_target_group" {
   health_check {
     healthy_threshold   = 2
     interval            = 30
-    path                = "/healthz" 
+    path                = "/healthz"
     port                = "8080"
     protocol            = "HTTP"
     timeout             = 5
@@ -555,11 +555,11 @@ resource "aws_lb_listener" "http_listener" {
   default_action {
     type = "forward"
 
-    target_group_arn = aws_lb_target_group.web_app_target_group.arn 
+    target_group_arn = aws_lb_target_group.web_app_target_group.arn
   }
 }
 
 resource "aws_autoscaling_attachment" "asg_attachment" {
   autoscaling_group_name = aws_autoscaling_group.webapp_autoscaling_group.id
-  lb_target_group_arn  = aws_lb_target_group.web_app_target_group.arn 
+  lb_target_group_arn    = aws_lb_target_group.web_app_target_group.arn
 }
