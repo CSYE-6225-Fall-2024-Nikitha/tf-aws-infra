@@ -114,29 +114,30 @@ resource "aws_security_group" "application_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    description = "Allow HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # ingress {
+  #   description = "Allow HTTP"
+  #   from_port   = 80
+  #   to_port     = 80
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
 
   ingress {
-    description = "Allow WebApp Port"
-    from_port   = var.app_port
-    to_port     = var.app_port
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "Allow WebApp Port"
+    from_port       = var.app_port
+    to_port         = var.app_port
+    protocol        = "tcp"
+    cidr_blocks     = ["0.0.0.0/0"]
+    security_groups = [aws_security_group.load_balancer_security_group.id]
   }
 
-  ingress {
-    description = "Allow HTTPS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # ingress {
+  #   description = "Allow HTTPS"
+  #   from_port   = 443
+  #   to_port     = 443
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
 
   # Egress rule (allow all outgoing traffic)
   egress {
@@ -209,37 +210,37 @@ resource "aws_db_instance" "rds_instance" {
 }
 
 # EC2 Instance
-resource "aws_instance" "app_instance" {
-  ami                         = var.ami
-  instance_type               = var.instance_type
-  availability_zone           = element(data.aws_availability_zones.available.names, 0)
-  subnet_id                   = aws_subnet.public_subnet[0].id
-  security_groups             = [aws_security_group.application_security_group.id]
-  key_name                    = var.key_name
-  disable_api_termination     = false
-  associate_public_ip_address = true
-  iam_instance_profile        = aws_iam_instance_profile.combined_instance_profile.name
-  user_data = templatefile("${path.module}/userData.tpl", {
-    DB_NAME      = aws_db_instance.rds_instance.db_name
-    DB_USER      = aws_db_instance.rds_instance.username
-    DB_PASSWORD  = aws_db_instance.rds_instance.password
-    DB_HOST      = aws_db_instance.rds_instance.address
-    DB_PORT      = var.db_port
-    DB_DIALECT   = var.dialect
-    S3_BUCKET_ID = aws_s3_bucket.csye6225_bucket.bucket
-    AWS_REGION   = var.region
-  })
+# resource "aws_instance" "app_instance" {
+#   ami                         = var.ami
+#   instance_type               = var.instance_type
+#   availability_zone           = element(data.aws_availability_zones.available.names, 0)
+#   subnet_id                   = aws_subnet.public_subnet[0].id
+#   security_groups             = [aws_security_group.application_security_group.id]
+#   key_name                    = var.key_name
+#   disable_api_termination     = false
+#   associate_public_ip_address = true
+#   iam_instance_profile        = aws_iam_instance_profile.combined_instance_profile.name
+#   user_data = templatefile("${path.module}/userData.tpl", {
+#     DB_NAME      = aws_db_instance.rds_instance.db_name
+#     DB_USER      = aws_db_instance.rds_instance.username
+#     DB_PASSWORD  = aws_db_instance.rds_instance.password
+#     DB_HOST      = aws_db_instance.rds_instance.address
+#     DB_PORT      = var.db_port
+#     DB_DIALECT   = var.dialect
+#     S3_BUCKET_ID = aws_s3_bucket.csye6225_bucket.bucket
+#     AWS_REGION   = var.region
+#   })
 
-  root_block_device {
-    volume_size           = var.volume_size
-    volume_type           = var.volume_type
-    delete_on_termination = var.delete_on_termination
-  }
+#   root_block_device {
+#     volume_size           = var.volume_size
+#     volume_type           = var.volume_type
+#     delete_on_termination = var.delete_on_termination
+#   }
 
-  tags = {
-    Name = "${var.name}-app-instance"
-  }
-}
+#   tags = {
+#     Name = "${var.name}-app-instance"
+#   }
+# }
 
 # S3 bucket
 resource "aws_s3_bucket" "csye6225_bucket" {
@@ -281,8 +282,11 @@ resource "aws_route53_record" "app_record" {
   name    = "${var.subdomain}.nikitha-kambhampati.me"
   type    = "A"
 
-  ttl     = 300
-  records = [aws_instance.app_instance.public_ip]
+  alias {
+    name                   = aws_lb.web_app_lb.dns_name
+    zone_id                = aws_lb.web_app_lb.zone_id
+    evaluate_target_health = true
+  }
 }
 
 
@@ -325,7 +329,10 @@ resource "aws_iam_policy" "combined_policy" {
           "s3:PutObject",
           "s3:GetObject",
           "s3:DeleteObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "elasticloadbalancing:RegisterTargets",
+          "elasticloadbalancing:DeregisterTargets",
+          "elasticloadbalancing:DescribeTargetHealth"
         ],
         Resource = [
           "${aws_s3_bucket.csye6225_bucket.arn}/*", # Allows actions on all objects in your specified S3 bucket
@@ -354,4 +361,205 @@ resource "aws_iam_role_policy_attachment" "attach_combined_policy" {
 resource "aws_iam_instance_profile" "combined_instance_profile" {
   name = "combined_instance_profile"
   role = aws_iam_role.combined_role.name
+}
+
+// Load Balancer Security Group
+resource "aws_security_group" "load_balancer_security_group" {
+  name        = "load_balancer_security_group"
+  description = "Security group for load balancer"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+
+
+// Auto scaling and Launch Template
+resource "aws_launch_template" "web_app_launch_template" {
+  name                    = "csye6225_asg"
+  image_id                = var.ami
+  instance_type           = var.instance_type
+  key_name                = var.key_name
+  disable_api_termination = false
+  network_interfaces {
+    associate_public_ip_address = true
+    subnet_id                   = aws_subnet.public_subnet[0].id
+
+    security_groups = [
+      aws_security_group.application_security_group.id
+    ]
+  }
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.combined_instance_profile.name
+  }
+
+  user_data = base64encode(templatefile("${path.module}/userData.tpl", {
+    DB_NAME      = aws_db_instance.rds_instance.db_name
+    DB_USER      = aws_db_instance.rds_instance.username
+    DB_PASSWORD  = aws_db_instance.rds_instance.password
+    DB_HOST      = aws_db_instance.rds_instance.address
+    DB_PORT      = var.db_port
+    DB_DIALECT   = var.dialect
+    S3_BUCKET_ID = aws_s3_bucket.csye6225_bucket.bucket
+    AWS_REGION   = var.region
+  }))
+
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = {
+      Name = "${var.name}-app-instance"
+    }
+  }
+
+  # Optional: Block device mappings for root volume settings
+  block_device_mappings {
+    device_name = "/dev/xvda" # Or the appropriate device name
+    ebs {
+      volume_size           = var.volume_size
+      volume_type           = var.volume_type
+      delete_on_termination = var.delete_on_termination
+    }
+  }
+}
+
+
+resource "aws_autoscaling_group" "webapp_autoscaling_group" {
+  launch_template {
+    id      = aws_launch_template.web_app_launch_template.id
+    version = "$Latest"
+  }
+
+  min_size            = 1
+  max_size            = 3
+  desired_capacity    = 1
+  vpc_zone_identifier = [aws_subnet.public_subnet[0].id]
+  default_cooldown    = 60
+
+  tag {
+    key                 = "AutoScalingGroup"
+    value               = "WebAppAutoScalingGroup"
+    propagate_at_launch = true
+  }
+}
+
+#Auto scaling policies
+resource "aws_autoscaling_policy" "scale_up" {
+  name                   = "scale_up"
+  scaling_adjustment     = 1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 60
+  autoscaling_group_name = aws_autoscaling_group.webapp_autoscaling_group.name
+
+  depends_on = [aws_autoscaling_group.webapp_autoscaling_group]
+}
+
+resource "aws_autoscaling_policy" "scale_down" {
+  name                   = "scale_down"
+  scaling_adjustment     = -1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 60
+  autoscaling_group_name = aws_autoscaling_group.webapp_autoscaling_group.name
+
+  depends_on = [aws_autoscaling_group.webapp_autoscaling_group]
+}
+
+# Create CloudWatch alarms for the scaling policies
+resource "aws_cloudwatch_metric_alarm" "cpu_high" {
+  alarm_name          = "high_cpu_alarm"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "60"
+  statistic           = "Average"
+  threshold           = 5
+  alarm_description   = "Alarm when CPU exceeds 5%"
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.webapp_autoscaling_group.name
+  }
+
+  alarm_actions = [aws_autoscaling_policy.scale_up.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "cpu_low" {
+  alarm_name          = "low_cpu_alarm"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "60"
+  statistic           = "Average"
+  threshold           = 3
+  alarm_description   = "Alarm when CPU is below 3%"
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.webapp_autoscaling_group.name
+  }
+
+  alarm_actions = [aws_autoscaling_policy.scale_down.arn]
+}
+
+# create app load balancer
+resource "aws_lb" "web_app_lb" {
+  name                       = "web-app-lb"
+  internal                   = false
+  load_balancer_type         = "application"
+  security_groups            = [aws_security_group.load_balancer_security_group.id]
+  subnets                    = aws_subnet.public_subnet[*].id
+  enable_deletion_protection = false
+  tags = {
+    Name = "web_app_load_balancer"
+  }
+}
+
+resource "aws_lb_target_group" "web_app_target_group" {
+  name     = "web-app-target-group"
+  port     = var.app_port
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+
+  health_check {
+    healthy_threshold   = 2
+    interval            = 30
+    path                = "/healthz"
+    port                = "8080"
+    protocol            = "HTTP"
+    timeout             = 5
+    unhealthy_threshold = 2
+  }
+
+  tags = {
+    Name = "web_app_target_group"
+  }
+}
+
+
+resource "aws_lb_listener" "http_listener" {
+  load_balancer_arn = aws_lb.web_app_lb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "forward"
+
+    target_group_arn = aws_lb_target_group.web_app_target_group.arn
+  }
+}
+
+resource "aws_autoscaling_attachment" "asg_attachment" {
+  autoscaling_group_name = aws_autoscaling_group.webapp_autoscaling_group.id
+  lb_target_group_arn    = aws_lb_target_group.web_app_target_group.arn
 }

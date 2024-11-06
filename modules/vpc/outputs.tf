@@ -14,9 +14,6 @@ output "internet_gateway_id" {
   value = aws_internet_gateway.main.id
 }
 
-output "ec2_public_dns" {
-  value = aws_instance.app_instance.public_dns
-}
 
 output "db_name" {
   value = aws_db_instance.rds_instance.db_name
