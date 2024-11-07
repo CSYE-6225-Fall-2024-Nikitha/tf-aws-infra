@@ -323,6 +323,21 @@ resource "aws_iam_policy" "combined_policy" {
       {
         Effect = "Allow",
         Action = [
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeTargetHealth",
+          "elasticloadbalancing:CreateLoadBalancer",
+          "elasticloadbalancing:CreateListener",
+          "elasticloadbalancing:CreateTargetGroup",
+          "elasticloadbalancing:ModifyLoadBalancerAttributes",
+          "elasticloadbalancing:ModifyListener",
+          "elasticloadbalancing:ModifyTargetGroup",
+          "elasticloadbalancing:RegisterTargets",
+          "elasticloadbalancing:DeregisterTargets",
+          "elasticloadbalancing:DeleteLoadBalancer",
+          "elasticloadbalancing:DeleteListener",
+          "elasticloadbalancing:DeleteTargetGroup",
           "cloudwatch:PutMetricData",
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
@@ -498,7 +513,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   period              = 60
   statistic           = "Average"
   threshold           = var.cpu_high
-  alarm_description   = "Alarm when CPU exceeds 5%"
+  alarm_description   = "Alarm when CPU exceeds ${var.cpu_high}%"
   actions_enabled     = true
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.webapp_autoscaling_group.name
@@ -517,7 +532,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low" {
   statistic           = "Average"
   threshold           = var.cpu_low
   actions_enabled     = true
-  alarm_description   = "Alarm when CPU is below 3%"
+  alarm_description   = "Alarm when CPU is below threshold ${var.cpu_low}%"
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.webapp_autoscaling_group.name
   }
