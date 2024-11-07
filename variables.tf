@@ -139,3 +139,24 @@ variable "ami" {
   description = "The ami id"
   type        = string
 }
+
+variable "cpu_high" {
+  description = "CPU high threshold"
+  type        = number
+}
+
+variable "cpu_low" {
+  description = "CPU low threshold"
+  type        = number
+}
+
+variable "min_instances" {
+  description = "Min number of instances for auto scaling"
+  type        = number
+}
+
+variable "max_instances" {
+  description = "Max number of instances for auto scaling"
+  type        = number
+}
+

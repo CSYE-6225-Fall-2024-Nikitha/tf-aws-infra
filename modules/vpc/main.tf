@@ -123,11 +123,11 @@ resource "aws_security_group" "application_security_group" {
   # }
 
   ingress {
-    description     = "Allow WebApp Port"
-    from_port       = var.app_port
-    to_port         = var.app_port
-    protocol        = "tcp"
-    cidr_blocks     = ["0.0.0.0/0"]
+    description = "Allow WebApp Port"
+    from_port   = var.app_port
+    to_port     = var.app_port
+    protocol    = "tcp"
+    #cidr_blocks     = ["0.0.0.0/0"]
     security_groups = [aws_security_group.load_balancer_security_group.id]
   }
 
@@ -287,6 +287,7 @@ resource "aws_route53_record" "app_record" {
     zone_id                = aws_lb.web_app_lb.zone_id
     evaluate_target_health = true
   }
+
 }
 
 
@@ -322,6 +323,21 @@ resource "aws_iam_policy" "combined_policy" {
       {
         Effect = "Allow",
         Action = [
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeTargetHealth",
+          "elasticloadbalancing:CreateLoadBalancer",
+          "elasticloadbalancing:CreateListener",
+          "elasticloadbalancing:CreateTargetGroup",
+          "elasticloadbalancing:ModifyLoadBalancerAttributes",
+          "elasticloadbalancing:ModifyListener",
+          "elasticloadbalancing:ModifyTargetGroup",
+          "elasticloadbalancing:RegisterTargets",
+          "elasticloadbalancing:DeregisterTargets",
+          "elasticloadbalancing:DeleteLoadBalancer",
+          "elasticloadbalancing:DeleteListener",
+          "elasticloadbalancing:DeleteTargetGroup",
           "cloudwatch:PutMetricData",
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
@@ -330,9 +346,7 @@ resource "aws_iam_policy" "combined_policy" {
           "s3:GetObject",
           "s3:DeleteObject",
           "s3:ListBucket",
-          "elasticloadbalancing:RegisterTargets",
-          "elasticloadbalancing:DeregisterTargets",
-          "elasticloadbalancing:DescribeTargetHealth"
+          "*"
         ],
         Resource = [
           "${aws_s3_bucket.csye6225_bucket.arn}/*", # Allows actions on all objects in your specified S3 bucket
@@ -382,13 +396,21 @@ resource "aws_security_group" "load_balancer_security_group" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
 }
 
 
 
 // Auto scaling and Launch Template
 resource "aws_launch_template" "web_app_launch_template" {
-  name                    = "csye6225_asg"
+  name                    = "csye6225_launch_template"
   image_id                = var.ami
   instance_type           = var.instance_type
   key_name                = var.key_name
@@ -396,7 +418,7 @@ resource "aws_launch_template" "web_app_launch_template" {
   network_interfaces {
     associate_public_ip_address = true
     subnet_id                   = aws_subnet.public_subnet[0].id
-
+    device_index                = 0
     security_groups = [
       aws_security_group.application_security_group.id
     ]
@@ -404,6 +426,9 @@ resource "aws_launch_template" "web_app_launch_template" {
 
   iam_instance_profile {
     name = aws_iam_instance_profile.combined_instance_profile.name
+  }
+  lifecycle {
+    prevent_destroy = false
   }
 
   user_data = base64encode(templatefile("${path.module}/userData.tpl", {
@@ -425,9 +450,8 @@ resource "aws_launch_template" "web_app_launch_template" {
     }
   }
 
-  # Optional: Block device mappings for root volume settings
   block_device_mappings {
-    device_name = "/dev/xvda" # Or the appropriate device name
+    device_name = "/dev/xvda"
     ebs {
       volume_size           = var.volume_size
       volume_type           = var.volume_type
@@ -438,13 +462,15 @@ resource "aws_launch_template" "web_app_launch_template" {
 
 
 resource "aws_autoscaling_group" "webapp_autoscaling_group" {
+  name              = "csye6225_asg"
+  target_group_arns = [aws_lb_target_group.web_app_target_group.arn]
   launch_template {
-    id      = aws_launch_template.web_app_launch_template.id
+    name    = aws_launch_template.web_app_launch_template.name
     version = "$Latest"
   }
 
-  min_size            = 1
-  max_size            = 3
+  min_size            = var.min_instances
+  max_size            = var.max_instances
   desired_capacity    = 1
   vpc_zone_identifier = [aws_subnet.public_subnet[0].id]
   default_cooldown    = 60
@@ -459,35 +485,36 @@ resource "aws_autoscaling_group" "webapp_autoscaling_group" {
 #Auto scaling policies
 resource "aws_autoscaling_policy" "scale_up" {
   name                   = "scale_up"
+  policy_type            = "SimpleScaling"
   scaling_adjustment     = 1
   adjustment_type        = "ChangeInCapacity"
   cooldown               = 60
   autoscaling_group_name = aws_autoscaling_group.webapp_autoscaling_group.name
 
-  depends_on = [aws_autoscaling_group.webapp_autoscaling_group]
 }
 
 resource "aws_autoscaling_policy" "scale_down" {
   name                   = "scale_down"
+  policy_type            = "SimpleScaling"
   scaling_adjustment     = -1
   adjustment_type        = "ChangeInCapacity"
   cooldown               = 60
   autoscaling_group_name = aws_autoscaling_group.webapp_autoscaling_group.name
 
-  depends_on = [aws_autoscaling_group.webapp_autoscaling_group]
 }
 
 # Create CloudWatch alarms for the scaling policies
 resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   alarm_name          = "high_cpu_alarm"
   comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
+  evaluation_periods  = 1
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = "60"
+  period              = 60
   statistic           = "Average"
-  threshold           = 5
-  alarm_description   = "Alarm when CPU exceeds 5%"
+  threshold           = var.cpu_high
+  alarm_description   = "Alarm when CPU exceeds ${var.cpu_high}%"
+  actions_enabled     = true
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.webapp_autoscaling_group.name
   }
@@ -498,13 +525,14 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
 resource "aws_cloudwatch_metric_alarm" "cpu_low" {
   alarm_name          = "low_cpu_alarm"
   comparison_operator = "LessThanThreshold"
-  evaluation_periods  = "1"
+  evaluation_periods  = 1
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = "60"
+  period              = 60
   statistic           = "Average"
-  threshold           = 3
-  alarm_description   = "Alarm when CPU is below 3%"
+  threshold           = var.cpu_low
+  actions_enabled     = true
+  alarm_description   = "Alarm when CPU is below threshold ${var.cpu_low}%"
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.webapp_autoscaling_group.name
   }
@@ -514,11 +542,12 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low" {
 
 # create app load balancer
 resource "aws_lb" "web_app_lb" {
-  name                       = "web-app-lb"
-  internal                   = false
-  load_balancer_type         = "application"
-  security_groups            = [aws_security_group.load_balancer_security_group.id]
-  subnets                    = aws_subnet.public_subnet[*].id
+  name               = "web-app-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.load_balancer_security_group.id]
+  # subnets                    = aws_subnet.public_subnet[*].id
+  subnets                    = [aws_subnet.public_subnet[0].id, aws_subnet.public_subnet[1].id, aws_subnet.public_subnet[2].id]
   enable_deletion_protection = false
   tags = {
     Name = "web_app_load_balancer"
@@ -532,13 +561,14 @@ resource "aws_lb_target_group" "web_app_target_group" {
   vpc_id   = aws_vpc.main.id
 
   health_check {
-    healthy_threshold   = 2
-    interval            = 30
-    path                = "/healthz"
+    healthy_threshold   = 5
+    interval            = 100
     port                = "8080"
     protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 2
+    unhealthy_threshold = 5
+    path                = "/healthz"
+    timeout             = 10
+    matcher             = "200"
   }
 
   tags = {
@@ -553,13 +583,12 @@ resource "aws_lb_listener" "http_listener" {
   protocol          = "HTTP"
 
   default_action {
-    type = "forward"
-
+    type             = "forward"
     target_group_arn = aws_lb_target_group.web_app_target_group.arn
   }
 }
 
 resource "aws_autoscaling_attachment" "asg_attachment" {
-  autoscaling_group_name = aws_autoscaling_group.webapp_autoscaling_group.id
+  autoscaling_group_name = aws_autoscaling_group.webapp_autoscaling_group.name
   lb_target_group_arn    = aws_lb_target_group.web_app_target_group.arn
 }
