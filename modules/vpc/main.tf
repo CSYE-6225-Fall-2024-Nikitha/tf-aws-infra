@@ -471,7 +471,7 @@ resource "aws_autoscaling_group" "webapp_autoscaling_group" {
 
   min_size            = var.min_instances
   max_size            = var.max_instances
-  desired_capacity    = 1
+  desired_capacity    = var.min_instances
   vpc_zone_identifier = [aws_subnet.public_subnet[0].id]
   default_cooldown    = 60
 
