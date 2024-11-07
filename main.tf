@@ -30,6 +30,9 @@ module "vpc" {
   region                = var.region
   cpu_high              = var.cpu_high
   cpu_low               = var.cpu_low
+  min_instances         = var.min_instances
+  max_instances         = var.max_instances
+  
 }
 
 output "vpc_id" {
