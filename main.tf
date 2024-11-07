@@ -32,7 +32,7 @@ module "vpc" {
   cpu_low               = var.cpu_low
   min_instances         = var.min_instances
   max_instances         = var.max_instances
-  
+
 }
 
 output "vpc_id" {
