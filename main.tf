@@ -28,6 +28,8 @@ module "vpc" {
   subdomain             = var.subdomain
   ami                   = var.ami
   region                = var.region
+  cpu_high              = var.cpu_high
+  cpu_low               = var.cpu_low
 }
 
 output "vpc_id" {

@@ -287,6 +287,7 @@ resource "aws_route53_record" "app_record" {
     zone_id                = aws_lb.web_app_lb.zone_id
     evaluate_target_health = true
   }
+  
 }
 
 
@@ -382,6 +383,14 @@ resource "aws_security_group" "load_balancer_security_group" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"  
+    cidr_blocks = ["0.0.0.0/0"]  
+  }
+
 }
 
 
@@ -438,6 +447,8 @@ resource "aws_launch_template" "web_app_launch_template" {
 
 
 resource "aws_autoscaling_group" "webapp_autoscaling_group" {
+  name                  = "csye6225_asg"
+  target_group_arns     = [aws_lb_target_group.web_app_target_group.arn]
   launch_template {
     id      = aws_launch_template.web_app_launch_template.id
     version = "$Latest"
@@ -486,7 +497,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   namespace           = "AWS/EC2"
   period              = "60"
   statistic           = "Average"
-  threshold           = 5
+  threshold           = var.cpu_high
   alarm_description   = "Alarm when CPU exceeds 5%"
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.webapp_autoscaling_group.name
@@ -503,7 +514,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low" {
   namespace           = "AWS/EC2"
   period              = "60"
   statistic           = "Average"
-  threshold           = 3
+  threshold           = var.cpu_low
   alarm_description   = "Alarm when CPU is below 3%"
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.webapp_autoscaling_group.name
@@ -532,13 +543,12 @@ resource "aws_lb_target_group" "web_app_target_group" {
   vpc_id   = aws_vpc.main.id
 
   health_check {
-    healthy_threshold   = 2
-    interval            = 30
+    healthy_threshold   = 5
+    interval            = 100
     path                = "/healthz"
-    port                = "8080"
-    protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 2
+    timeout             = 10
+    unhealthy_threshold = 5
+    matcher             = "200"
   }
 
   tags = {
@@ -554,7 +564,6 @@ resource "aws_lb_listener" "http_listener" {
 
   default_action {
     type = "forward"
-
     target_group_arn = aws_lb_target_group.web_app_target_group.arn
   }
 }
