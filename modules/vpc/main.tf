@@ -417,7 +417,7 @@ resource "aws_launch_template" "web_app_launch_template" {
   disable_api_termination = false
   network_interfaces {
     associate_public_ip_address = true
-    subnet_id                   = aws_subnet.public_subnet[*].id
+    #subnet_id                   = aws_subnet.public_subnet[*].id
     device_index                = 0
     security_groups = [
       aws_security_group.application_security_group.id
