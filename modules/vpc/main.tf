@@ -417,7 +417,7 @@ resource "aws_launch_template" "web_app_launch_template" {
   disable_api_termination = false
   network_interfaces {
     associate_public_ip_address = true
-    subnet_id                   = aws_subnet.public_subnet[0].id
+    subnet_id                   = aws_subnet.public_subnet[*].id
     device_index                = 0
     security_groups = [
       aws_security_group.application_security_group.id
@@ -472,7 +472,7 @@ resource "aws_autoscaling_group" "webapp_autoscaling_group" {
   min_size            = var.min_instances
   max_size            = var.max_instances
   desired_capacity    = var.min_instances
-  vpc_zone_identifier = [aws_subnet.public_subnet[0].id]
+  vpc_zone_identifier = [aws_subnet.public_subnet[*].id]
   default_cooldown    = 60
 
   tag {
