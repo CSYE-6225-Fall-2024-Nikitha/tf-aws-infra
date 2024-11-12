@@ -651,7 +651,7 @@ resource "aws_lambda_function" "email_verification_function" {
     DB_PORT      = var.db_port
     DB_DIALECT   = var.dialect
       MAILGUN_API_KEY   = var.email_server_api_key
-      MAILGUN_DOMAIN    = "your-domain.com" 
+      MAILGUN_DOMAIN    = "${var.subdomain}.nikitha-kambhampati.me"
     }
   }
 }
