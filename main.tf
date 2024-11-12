@@ -32,7 +32,7 @@ module "vpc" {
   cpu_low               = var.cpu_low
   min_instances         = var.min_instances
   max_instances         = var.max_instances
-
+  email_server_api_key  = var.email_server_api_key
 }
 
 output "vpc_id" {
