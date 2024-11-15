@@ -435,15 +435,15 @@ resource "aws_launch_template" "web_app_launch_template" {
   }
 
   user_data = base64encode(templatefile("${path.module}/userData.tpl", {
-    DB_NAME      = aws_db_instance.rds_instance.db_name
-    DB_USER      = aws_db_instance.rds_instance.username
-    DB_PASSWORD  = aws_db_instance.rds_instance.password
-    DB_HOST      = aws_db_instance.rds_instance.address
-    DB_PORT      = var.db_port
-    DB_DIALECT   = var.dialect
-    S3_BUCKET_ID = aws_s3_bucket.csye6225_bucket.bucket
-    AWS_REGION   = var.region
-    SNS_TOPIC_ARN= aws_sns_topic.user_verifications.arn
+    DB_NAME       = aws_db_instance.rds_instance.db_name
+    DB_USER       = aws_db_instance.rds_instance.username
+    DB_PASSWORD   = aws_db_instance.rds_instance.password
+    DB_HOST       = aws_db_instance.rds_instance.address
+    DB_PORT       = var.db_port
+    DB_DIALECT    = var.dialect
+    S3_BUCKET_ID  = aws_s3_bucket.csye6225_bucket.bucket
+    AWS_REGION    = var.region
+    SNS_TOPIC_ARN = aws_sns_topic.user_verifications.arn
   }))
 
   tag_specifications {
@@ -611,13 +611,13 @@ resource "aws_iam_role" "lambda_role" {
 resource "aws_iam_policy" "lambda_s3_policy" {
   name        = "lambda_s3_access_policy"
   description = "IAM policy for Lambda to access SNS and RDS"
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "sns:Publish",
           "rds:DescribeDBInstances",
           "rds:ExecuteStatement"
@@ -637,21 +637,21 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
 resource "aws_lambda_function" "email_verification_function" {
   function_name = var.lambda_function_name
   role          = aws_iam_role.lambda_role.arn
-  handler       = "index.verifyEmail" 
+  handler       = "index.verifyEmail"
   runtime       = "nodejs14.x"
 
-  filename      = "/Users/nikithakambhampati/Desktop/a-08/serverless/lambda.zip"
+  filename = "/Users/nikithakambhampati/Desktop/a-08/serverless/lambda.zip"
 
   environment {
     variables = {
-        DB_NAME      = aws_db_instance.rds_instance.db_name
-    DB_USER      = aws_db_instance.rds_instance.username
-    DB_PASSWORD  = aws_db_instance.rds_instance.password
-    DB_HOST      = aws_db_instance.rds_instance.address
-    DB_PORT      = var.db_port
-    DB_DIALECT   = var.dialect
-      MAILGUN_API_KEY   = var.email_server_api_key
-      MAILGUN_DOMAIN    = "${var.subdomain}.nikitha-kambhampati.me"
+      DB_NAME         = aws_db_instance.rds_instance.db_name
+      DB_USER         = aws_db_instance.rds_instance.username
+      DB_PASSWORD     = aws_db_instance.rds_instance.password
+      DB_HOST         = aws_db_instance.rds_instance.address
+      DB_PORT         = var.db_port
+      DB_DIALECT      = var.dialect
+      MAILGUN_API_KEY = var.email_server_api_key
+      MAILGUN_DOMAIN  = "${var.subdomain}.nikitha-kambhampati.me"
     }
   }
 }
