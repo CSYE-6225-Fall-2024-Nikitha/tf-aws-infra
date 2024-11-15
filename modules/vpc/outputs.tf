@@ -34,3 +34,13 @@ output "db_host" {
 output "db_port" {
   value = aws_db_instance.rds_instance.port
 }
+
+output "sns_topic_arn" {
+  description = "ARN of the SNS topic"
+  value       = aws_sns_topic.user_verifications.arn
+}
+
+output "lambda_function_arn" {
+  description = "ARN of the Lambda function"
+  value       = aws_lambda_function.email_verification_function.arn
+}

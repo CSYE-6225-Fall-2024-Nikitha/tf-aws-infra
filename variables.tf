@@ -160,3 +160,14 @@ variable "max_instances" {
   type        = number
 }
 
+variable "email_server_api_key" {
+  description = "API key for the email server (e.g., Mailgun)"
+  type        = string
+  sensitive   = true
+}
+
+variable "lambda_function_name" {
+  description = "The name of the Lambda function"
+  type        = string
+  default     = "verifyEmail"
+}
