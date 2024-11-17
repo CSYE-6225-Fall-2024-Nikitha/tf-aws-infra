@@ -360,7 +360,8 @@ resource "aws_iam_policy" "combined_policy" {
 
           "arn:aws:logs:${var.region}::log-group:*",
           "arn:aws:logs:${var.region}::log-group:*:log-stream:*",
-          "${aws_sns_topic.user_verifications.arn}/*"
+          "${aws_sns_topic.user_verifications.arn}/*",
+          aws_sns_topic.user_verifications.arn
 
         ]
       }
@@ -599,7 +600,7 @@ resource "aws_autoscaling_attachment" "asg_attachment" {
 
 #SNS  Topic
 resource "aws_sns_topic" "user_verifications" {
-  name = "user-verification-topic"
+  name = "user_verification_topic"
 }
 
 
@@ -608,29 +609,45 @@ resource "aws_iam_role" "lambda_role" {
   assume_role_policy = data.aws_iam_policy_document.lambda_assume_role_policy.json
 }
 
-resource "aws_iam_policy" "lambda_s3_policy" {
-  name        = "lambda_s3_access_policy"
-  description = "IAM policy for Lambda to access SNS and RDS"
+resource "aws_iam_policy" "lambda_access_policy" {
+  name        = "lambda_access_policy"
+  description = "IAM policy for Lambda to access SNS, CloudWatch, and Secrets Manager"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Effect = "Allow"
-        Action = [
-          "sns:Publish",
-          "rds:DescribeDBInstances",
-          "rds:ExecuteStatement"
+        Action = ["sns:Publish"]
+        Resource = [
+          aws_sns_topic.user_verifications.arn,
+          "*"
         ]
-        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
       }
     ]
   })
 }
 
+
+
 resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
   role       = aws_iam_role.lambda_role.name
-  policy_arn = aws_iam_policy.lambda_s3_policy.arn
+  policy_arn = aws_iam_policy.lambda_access_policy.arn
 }
 
 
@@ -663,6 +680,7 @@ resource "aws_lambda_permission" "allow_sns" {
   function_name = aws_lambda_function.email_verification_function.function_name
   source_arn    = aws_sns_topic.user_verifications.arn
 }
+
 resource "aws_sns_topic_subscription" "lambda_subscription" {
   topic_arn = aws_sns_topic.user_verifications.arn
   protocol  = "lambda"
