@@ -1,5 +1,7 @@
 
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state = "available"
+}
 
 locals {
   az_count = length(data.aws_availability_zones.available.names)
@@ -486,9 +488,16 @@ resource "aws_autoscaling_group" "webapp_autoscaling_group" {
   max_size         = var.max_instances
   desired_capacity = var.min_instances
   #vpc_zone_identifier = [aws_subnet.public_subnet[0].id]
+  # vpc_zone_identifier = [
+  #   for subnet in aws_subnet.public_subnet : subnet.id if subnet.availability_zone == "ap-south-1a" || subnet.availability_zone == "ap-south-1b"
+  # ]
   vpc_zone_identifier = [
-    for subnet in aws_subnet.public_subnet : subnet.id if subnet.availability_zone == "ap-south-1a" || subnet.availability_zone == "ap-south-1b"
+    for subnet in aws_subnet.public_subnet : subnet.id
+    if contains(data.aws_availability_zones.available.names, subnet.availability_zone) &&
+    subnet.availability_zone != "ap-south-1c"
   ]
+
+
 
   availability_zones = null
   default_cooldown   = 60
