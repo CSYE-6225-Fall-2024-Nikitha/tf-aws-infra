@@ -357,15 +357,13 @@ resource "aws_iam_policy" "combined_policy" {
         Resource = [
           "${aws_s3_bucket.csye6225_bucket.arn}/*", # Allows actions on all objects in your specified S3 bucket
           aws_s3_bucket.csye6225_bucket.arn,
-          "*",
           "arn:aws:cloudwatch:${var.region}::dashboard/*",
-
           "arn:aws:cloudwatch:${var.region}::metric/*",
-
           "arn:aws:logs:${var.region}::log-group:*",
           "arn:aws:logs:${var.region}::log-group:*:log-stream:*",
           "${aws_sns_topic.user_verifications.arn}/*",
-          aws_sns_topic.user_verifications.arn
+          aws_sns_topic.user_verifications.arn,
+          "*",
 
         ]
       }
@@ -488,8 +486,12 @@ resource "aws_autoscaling_group" "webapp_autoscaling_group" {
   max_size         = var.max_instances
   desired_capacity = var.min_instances
   #vpc_zone_identifier = [aws_subnet.public_subnet[0].id]
-  vpc_zone_identifier = [for subnet in aws_subnet.public_subnet : subnet.id]
-  default_cooldown    = 60
+  vpc_zone_identifier = [
+    for subnet in aws_subnet.public_subnet : subnet.id if subnet.availability_zone == "ap-south-1a" || subnet.availability_zone == "ap-south-1b"
+  ]
+
+  availability_zones = null
+  default_cooldown   = 60
 
   tag {
     key                 = "AutoScalingGroup"
