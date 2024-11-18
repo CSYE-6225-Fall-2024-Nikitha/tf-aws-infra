@@ -33,6 +33,7 @@ module "vpc" {
   min_instances         = var.min_instances
   max_instances         = var.max_instances
   email_server_api_key  = var.email_server_api_key
+  file_name             = var.file_name
 }
 
 output "vpc_id" {

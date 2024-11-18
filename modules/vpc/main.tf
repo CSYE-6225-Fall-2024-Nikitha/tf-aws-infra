@@ -488,13 +488,10 @@ resource "aws_autoscaling_group" "webapp_autoscaling_group" {
   max_size         = var.max_instances
   desired_capacity = var.min_instances
   #vpc_zone_identifier = [aws_subnet.public_subnet[0].id]
-  # vpc_zone_identifier = [
-  #   for subnet in aws_subnet.public_subnet : subnet.id if subnet.availability_zone == "ap-south-1a" || subnet.availability_zone == "ap-south-1b"
-  # ]
   vpc_zone_identifier = [
     for subnet in aws_subnet.public_subnet : subnet.id
     if contains(data.aws_availability_zones.available.names, subnet.availability_zone) &&
-    subnet.availability_zone != "ap-south-1c"
+       subnet.availability_zone != "ap-south-1c"
   ]
 
 
@@ -679,7 +676,7 @@ resource "aws_lambda_function" "email_verification_function" {
   handler       = "index.verifyEmail"
   runtime       = "nodejs20.x"
 
-  filename = "function.zip"
+  filename = var.file_name
 
   environment {
     variables = {
