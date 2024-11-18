@@ -107,11 +107,13 @@ resource "aws_security_group" "application_security_group" {
 
   # Ingress rules (allow traffic on ports 22, 80, 443, and a custom app port)
   ingress {
-    description = "Allow SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "Allow SSH"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+
   }
 
   # ingress {
@@ -141,10 +143,12 @@ resource "aws_security_group" "application_security_group" {
 
   # Egress rule (allow all outgoing traffic)
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+
   }
 
   tags = {
@@ -388,24 +392,30 @@ resource "aws_security_group" "load_balancer_security_group" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+
   }
 
   ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+
   }
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+
   }
 
 }
@@ -474,10 +484,11 @@ resource "aws_autoscaling_group" "webapp_autoscaling_group" {
     version = "$Latest"
   }
 
-  min_size            = var.min_instances
-  max_size            = var.max_instances
-  desired_capacity    = var.min_instances
-  vpc_zone_identifier = [aws_subnet.public_subnet[*].id]
+  min_size         = var.min_instances
+  max_size         = var.max_instances
+  desired_capacity = var.min_instances
+  #vpc_zone_identifier = [aws_subnet.public_subnet[0].id]
+  vpc_zone_identifier = [for subnet in aws_subnet.subnet_public : subnet.id]
   default_cooldown    = 60
 
   tag {
@@ -552,7 +563,8 @@ resource "aws_lb" "web_app_lb" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.load_balancer_security_group.id]
   # subnets                    = aws_subnet.public_subnet[*].id
-  subnets                    = [aws_subnet.public_subnet[0].id, aws_subnet.public_subnet[1].id, aws_subnet.public_subnet[2].id]
+  # subnets                    = [aws_subnet.public_subnet[0].id, aws_subnet.public_subnet[1].id, aws_subnet.public_subnet[2].id]
+  subnets                    = [for subnet in aws_subnet.subnet_public : subnet.id]
   enable_deletion_protection = false
   tags = {
     Name = "web_app_load_balancer"
@@ -620,8 +632,7 @@ resource "aws_iam_policy" "lambda_access_policy" {
         Effect = "Allow"
         Action = ["sns:Publish"]
         Resource = [
-          aws_sns_topic.user_verifications.arn,
-          "*"
+          aws_sns_topic.user_verifications.arn
         ]
       },
       {
@@ -634,14 +645,14 @@ resource "aws_iam_policy" "lambda_access_policy" {
         Resource = "arn:aws:logs:*:*:*"
       },
       {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue"
-        ]
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = "*"
       }
     ]
   })
 }
+
 
 
 
@@ -655,9 +666,9 @@ resource "aws_lambda_function" "email_verification_function" {
   function_name = var.lambda_function_name
   role          = aws_iam_role.lambda_role.arn
   handler       = "index.verifyEmail"
-  runtime       = "nodejs14.x"
+  runtime       = "nodejs20.x"
 
-  filename = "/Users/nikithakambhampati/Desktop/a-08/serverless/lambda.zip"
+  filename = "function.zip"
 
   environment {
     variables = {
