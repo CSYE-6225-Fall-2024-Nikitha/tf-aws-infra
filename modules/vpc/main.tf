@@ -488,7 +488,7 @@ resource "aws_autoscaling_group" "webapp_autoscaling_group" {
   max_size         = var.max_instances
   desired_capacity = var.min_instances
   #vpc_zone_identifier = [aws_subnet.public_subnet[0].id]
-  vpc_zone_identifier = [for subnet in aws_subnet.subnet_public : subnet.id]
+  vpc_zone_identifier = [for subnet in aws_subnet.public_subnet : subnet.id]
   default_cooldown    = 60
 
   tag {
@@ -564,7 +564,7 @@ resource "aws_lb" "web_app_lb" {
   security_groups    = [aws_security_group.load_balancer_security_group.id]
   # subnets                    = aws_subnet.public_subnet[*].id
   # subnets                    = [aws_subnet.public_subnet[0].id, aws_subnet.public_subnet[1].id, aws_subnet.public_subnet[2].id]
-  subnets                    = [for subnet in aws_subnet.subnet_public : subnet.id]
+  subnets                    = [for subnet in aws_subnet.public_subnet : subnet.id]
   enable_deletion_protection = false
   tags = {
     Name = "web_app_load_balancer"
