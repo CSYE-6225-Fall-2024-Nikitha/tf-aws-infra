@@ -174,3 +174,8 @@ variable "lambda_function_name" {
   type        = string
   default     = "verifyEmail"
 }
+variable "file_name" {
+  description = "The name of the file to be uploaded"
+  type        = string
+  default     = "function.zip"
+}
