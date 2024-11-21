@@ -491,7 +491,7 @@ resource "aws_autoscaling_group" "webapp_autoscaling_group" {
   vpc_zone_identifier = [
     for subnet in aws_subnet.public_subnet : subnet.id
     if contains(data.aws_availability_zones.available.names, subnet.availability_zone) &&
-       subnet.availability_zone != "ap-south-1c"
+    subnet.availability_zone != "ap-south-1c"
   ]
 
 
