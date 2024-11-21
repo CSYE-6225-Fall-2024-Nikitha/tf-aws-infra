@@ -8,6 +8,12 @@
   - An Application Security Group for web applications
   - An EC2 instance using a custom AMI
   - An RDS instance for hosting postgresql databases
+  - A Load Balancer
+  - An Auto scaling group
+  - DNS Management
+  - Storage Group
+  - AWS Lambda (Event Driven Architecture)
+  - SNS (Simple Notification Service)
 
 - This Terraform setup allows creating multiple VPCs with their own subnets, gateways, and routing tables without hardcoded values. This is achieved by utilizing variables for customization.
 - Application Security Group Configuration
@@ -15,6 +21,16 @@
 
   - Application Security Group: This security group allows incoming TCP traffic on ports 22 (SSH), 80 (HTTP), 443 (HTTPS), and a specified port for your application.
 - **EC2 Instance**: The EC2 instance will be launched using the specified custom AMI and will be associated with the application security group.
+
+- **Database Security Group**: Restricts database access; allows only internal traffic.  
+- **RDS Instance**: Sets up a private database with secure credentials.  
+- **EC2 Security Group**: Controls app instance access via SSH and Load Balancer.  
+- **S3 Bucket**: Stores data securely with encryption and lifecycle policies.  
+- **Application Load Balancer**: Distributes app traffic; forwards HTTP to EC2.  
+- **Auto Scaling Group**: Manages EC2 instances based on CPU utilization.  
+- **DNS Configuration**: Routes traffic using Route 53 for domain and subdomains.  
+- **SNS & Lambda**: Configures notifications and database interaction via AWS Lambda.  
+
 
 # Prerequisites
 Before you begin, ensure that the following are installed and set up on your local machine:
