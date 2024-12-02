@@ -163,8 +163,14 @@ variable "max_instances" {
   type        = number
 }
 
-variable "email_server_api_key" {
-  description = "API key for the email server (e.g., Mailgun)"
+variable "email_server_api_key_dev" {
+  description = "API key for the email server  dev(e.g., Mailgun)"
+  type        = string
+  sensitive   = true
+}
+
+variable "email_server_api_key_demo" {
+  description = "API key for the email server  demo(e.g., Mailgun)"
   type        = string
   sensitive   = true
 }

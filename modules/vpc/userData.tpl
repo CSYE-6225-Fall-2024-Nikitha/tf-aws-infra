@@ -8,14 +8,35 @@ if [ ! -d "/home/ubuntu/webapp" ]; then
   exit 1
 fi
 
+# Check if jq is installed
+if ! command -v jq &> /dev/null
+then
+    echo "jq could not be found, installing..."
+    sudo apt-get update -y
+    sudo apt-get install -y jq
+else
+    echo "jq is already installed."
+fi
+
+sudo curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
 sudo chown -R csye6225:csye6225 /home/ubuntu/webapp
 sudo chmod -R 755 /home/ubuntu/
 sudo chmod -R 755 /home/ubuntu/webapp
 
+
+
+
+
 sudo tee "$ENV_FILE" <<EOF
 DB_HOST=${DB_HOST}
 DB_USER=${DB_USER}
-DB_PASSWORD=${DB_PASSWORD}
+DB_PASSWORD=$(aws secretsmanager get-secret-value \
+  --secret-id rds-password-kms \
+  --query 'SecretString' \
+  --output text)
 DB_NAME=${DB_NAME}
 DB_PORT=${DB_PORT}
 DB_DIALECT=${DB_DIALECT}
