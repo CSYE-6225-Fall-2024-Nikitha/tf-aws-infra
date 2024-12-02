@@ -14,6 +14,8 @@
   - Storage Group
   - AWS Lambda (Event Driven Architecture)
   - SNS (Simple Notification Service)
+  - KMS Key Management Service
+  - ACM (Amazon Certificate Manager)
 
 - This Terraform setup allows creating multiple VPCs with their own subnets, gateways, and routing tables without hardcoded values. This is achieved by utilizing variables for customization.
 - Application Security Group Configuration
@@ -29,7 +31,52 @@
 - **Application Load Balancer**: Distributes app traffic; forwards HTTP to EC2.  
 - **Auto Scaling Group**: Manages EC2 instances based on CPU utilization.  
 - **DNS Configuration**: Routes traffic using Route 53 for domain and subdomains.  
-- **SNS & Lambda**: Configures notifications and database interaction via AWS Lambda.  
+- **SNS & Lambda**: Configures notifications and database interaction via AWS Lambda. 
+
+- **AWS Key Management Service (KMS)**:
+
+  Separate KMS keys for:
+   - EC2
+   - RDS
+   - S3 Buckets
+   - Secret Manager (Database Password and Email Service C   redentials)
+   - KMS key rotation period: 90 days
+   - KMS keys are referenced in Terraform configurations.
+
+- **Secrets Management**:
+
+  -- Database Password: Auto-generated using Terraform and stored in AWS Secret     Manager with a custom KMS key.
+
+  -- Retrieved via user-data script to configure the web application.
+
+  -- Email Service Credentials:
+  Stored securely in AWS Secret Manager with a custom KMS key.
+
+- Automatically retrieved by the Lambda function during execution.
+
+**SSL Certificates**:
+
+Development Environment: 
+- Uses AWS Certificate Manager for SSL certificates.
+Demo Environment: 
+- Requires an SSL certificate imported from a third-party vendor (e.g., Namecheap).
+Import command:
+```
+aws acm import-certificate --certificate file://certificate.pem --private-key file://private-key.pem --certificate-chain file://certificate-chain.pem --region <region>
+```
+
+- Load balancer is configured to use the imported SSL certificate.
+Notes:
+- Only HTTPS traffic is supported for the application.
+- HTTP-to-HTTPS redirection is not required.
+- Traffic between the load balancer and EC2 instance uses plain HTTP.
+- Direct connections to the EC2 instance are blocked.
+
+**Prerequisites**
+AWS CLI
+Install and configure the AWS CLI with access to the required AWS resources.
+
+
 
 
 # Prerequisites
