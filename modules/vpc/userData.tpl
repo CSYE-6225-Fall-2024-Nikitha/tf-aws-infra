@@ -8,14 +8,36 @@ if [ ! -d "/home/ubuntu/webapp" ]; then
   exit 1
 fi
 
+# Check if jq is installed
+if ! command -v jq &> /dev/null
+then
+    echo "jq could not be found, installing..."
+    sudo apt-get update -y
+    sudo apt-get install -y jq
+else
+    echo "jq is already installed."
+fi
+
+
 sudo chown -R csye6225:csye6225 /home/ubuntu/webapp
 sudo chmod -R 755 /home/ubuntu/
 sudo chmod -R 755 /home/ubuntu/webapp
 
+
+SECRET_NAME="rds-password"
+
+DB_SECRET=$(aws secretsmanager get-secret-value \
+  --secret-id $SECRET_NAME \
+  --region ${AWS_REGION} \
+  --query SecretString \
+  --output text)
+
+DB_PASSWORD=$(echo $DB_SECRET | jq -r .password)
+
 sudo tee "$ENV_FILE" <<EOF
 DB_HOST=${DB_HOST}
 DB_USER=${DB_USER}
-DB_PASSWORD=${DB_PASSWORD}
+DB_PASSWORD=$DB_PASSWORD
 DB_NAME=${DB_NAME}
 DB_PORT=${DB_PORT}
 DB_DIALECT=${DB_DIALECT}
